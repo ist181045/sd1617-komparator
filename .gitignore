@@ -17,6 +17,10 @@ hs_err_pid*
 .settings/
 bin/
 
+# JetBrains Intellij IDEA
+.idea/
+*.iml
+
 # Mac
 .DS_Store
 
