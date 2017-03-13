@@ -1,15 +1,10 @@
 # Projeto de Sistemas Distribuídos 2016-2017 #
 
-Grupo CXX
-*(preencher com identificador de grupo e depois apagar esta linha)*
+## Grupo A58
 
-... ... ...
-
-... ... ...
-
-... ... ...
-*(preencher com nome, número e email de membro do grupo e depois apagar esta linha)*
-
+| :hash: Número | :memo: Nome |      :email: E-Mail       |
+|--------------:|-------------|---------------------------|
+|         81045 | Rui Ventura | <rventura.pt@outlook.com> |
 
 -------------------------------------------------------------------------------
 **FIM**
