@@ -2,10 +2,10 @@
 
 ## Group A58
 
-| :hash: Number | :memo: Name   |      :email: E-Mail       |
+| :hash: Number |  :memo: Name  |      :email: E-Mail       |
 |--------------:|---------------|---------------------------|
-|         81045 | Rui Ventura   | <rventura.pt@outlook.com> |
-|         81670 | João Oliveira |    <jafo1200@gmail.com>   |
+|     **81045** | Rui Ventura   | <rventura.pt@outlook.com> |
+|     **81670** | João Oliveira |    <jafo1200@gmail.com>   |
 
 -------------------------------------------------------------------------------
 **FIN**
