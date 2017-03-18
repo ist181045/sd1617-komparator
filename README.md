@@ -1,15 +1,12 @@
-# Projeto de Sistemas Distribuídos 2016-2017 #
+# Distributed Systems Project - 2016/2017 #
 
-Grupo CXX
-*(preencher com identificador de grupo e depois apagar esta linha)*
+## Group A58
 
-... ... ...
-
-... ... ...
-
-... ... ...
-*(preencher com nome, número e email de membro do grupo e depois apagar esta linha)*
-
+| :hash: Number |  :memo: Name  |           :email: E-Mail          |
+|--------------:|---------------|-----------------------------------|
+|     **81045** | Rui Ventura   |  <rventura.pt@outlook.com>        |
+|     **81338** | Pedro Cerejo  | <pedro.cerejo@tecnico.ulisboa.pt> |
+|     **81670** | João Oliveira |     <jafo1200@gmail.com>          |
 
 -------------------------------------------------------------------------------
-**FIM**
+**FIN**
