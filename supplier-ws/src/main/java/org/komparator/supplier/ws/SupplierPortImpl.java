@@ -51,12 +51,20 @@ public class SupplierPortImpl implements SupplierPortType {
 	}
 	@Override
 	public List<ProductView> searchProducts(String descText) throws BadText_Exception {
-		// TODO
+		// check description text
+		if (descText == null)
+			throwBadText("Product description cannot be null!");
+		descText = descText.trim();
+		if (descText.length() == 0)
+			throwBadText("Product description cannot be empty or whitespace!");
 		
+		List<ProductView> products = listProducts();
+		for ( ProductView pv : products) 
+			if (!pv.getDesc().toLowerCase().contains(descText.toLowerCase())) 
+				products.remove(pv);
 		
-		
-		
-		return null;
+		return products;
+
 	}
 	@Override
 	public String buyProduct(String productId, int quantity)
