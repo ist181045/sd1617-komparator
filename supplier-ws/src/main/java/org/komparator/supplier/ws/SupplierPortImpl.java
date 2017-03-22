@@ -59,11 +59,12 @@ public class SupplierPortImpl implements SupplierPortType {
 			throwBadText("Product description cannot be empty or whitespace!");
 		
 		List<ProductView> products = listProducts();
+		List<ProductView> result = new ArrayList<ProductView>();
 		for ( ProductView pv : products) 
-			if (!pv.getDesc().toLowerCase().contains(descText.toLowerCase())) 
-				products.remove(pv);
+			if (pv.getDesc().toLowerCase().contains(descText.toLowerCase())) 
+				result.add(pv);
 		
-		return products;
+		return result;
 
 	}
 	@Override
