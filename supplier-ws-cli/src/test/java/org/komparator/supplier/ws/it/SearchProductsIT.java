@@ -3,6 +3,7 @@ package org.komparator.supplier.ws.it;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -125,12 +126,41 @@ public class SearchProductsIT extends BaseIT {
 	
 	@Test
 	public void searchProductTwoExist() throws BadText_Exception {
-		assertEquals(2, client.searchProducts("ball").size());
-	}
-	
-	@Test
-	public void searchProductLowerCase() throws BadText_Exception {
-		assertEquals(1, client.searchProducts("basketball").size());
+		String desc = "ball";
+		
+		List<ProductView> searchResults = client.searchProducts(desc);
+		
+		ProductView product1 = searchResults.get(0);
+		ProductView product2 = searchResults.get(1);
+		
+		assertEquals(2, searchResults.size());
+		
+		if(product1.getId().equals("X1")) {
+			assertEquals(10, product1.getPrice());
+			assertEquals(10, product1.getQuantity());
+			assertEquals("Basketball", product1.getDesc());
+			
+			assertEquals("Y2", product2.getId());
+			assertEquals(20, product2.getPrice());
+			assertEquals(20, product2.getQuantity());
+			assertEquals("Soccer ball", product2.getDesc());
+			
+		}
+		else if(product1.getId().equals("Y2")) {
+			assertEquals(20, product1.getPrice());
+			assertEquals(20, product1.getQuantity());
+			assertEquals("Soccer ball", product1.getDesc());
+			
+			assertEquals("X1", product2.getId());
+			assertEquals(10, product2.getPrice());
+			assertEquals(10, product2.getQuantity());
+			assertEquals("Basketball", product2.getDesc());
+		}
+		else {
+			fail();
+		}
+		
+		
 	}
 	
 
