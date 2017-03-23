@@ -61,7 +61,7 @@ public class SupplierPortImpl implements SupplierPortType {
 		List<ProductView> products = listProducts();
 		List<ProductView> result = new ArrayList<ProductView>();
 		for ( ProductView pv : products) 
-			if (pv.getDesc().toLowerCase().contains(descText.toLowerCase())) 
+			if (pv.getDesc().contains(descText)) 
 				result.add(pv);
 		
 		return result;
@@ -82,17 +82,20 @@ public class SupplierPortImpl implements SupplierPortType {
 		
 		Supplier supplier = Supplier.getInstance();
 		Product p = supplier.getProduct(productId);
+		
+		//check if product id exists
+		if(p == null) 
+			throwBadProductId("Product identifier doesn't exist");
+		
+		//product found :D
 		String purchaseId = null;
-		if (p != null) {
-			//product found :D
-			try {
-				//buy product
-				purchaseId = supplier.buyProduct(productId, quantity);
-			} catch (QuantityException qe) {
-				throwInsufficientQuantity("Quantity not available!");
-			}
+
+		try {
+			//buy product
+			purchaseId = supplier.buyProduct(productId, quantity);
+		} catch (QuantityException qe) {
+			throwInsufficientQuantity("Quantity not available!");
 		}
-		//product not found :(
 		return purchaseId;
 	}
 
