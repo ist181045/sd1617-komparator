@@ -7,14 +7,21 @@ public class SupplierClientApp {
 		// Check arguments
 		if (args.length < 1) {
 			System.err.println("Argument(s) missing!");
-			System.err.println("Usage: java " + SupplierClientApp.class.getName() + " wsURL");
+			System.err.println("Usage: java " + SupplierClientApp.class.getName() + " wsURL OR uddiURL wsName");
 			return;
 		}
-		String wsURL = args[0];
-
-		// Create client
-		System.out.printf("Creating client for server at %s%n", wsURL);
-		SupplierClient client = new SupplierClient(wsURL);
+		
+		SupplierClient client = null;
+		
+		if(args.length == 1) {
+			String wsURL = args[0];
+			client = new SupplierClient(wsURL);
+		}
+		else if(args.length == 2) {
+			String uddiURL = args[0];
+			String wsName = args[1];
+			client = new SupplierClient(uddiURL, wsName);
+		}
 
 		// the following remote invocations are just basic examples
 		// the actual tests are made using JUnit
