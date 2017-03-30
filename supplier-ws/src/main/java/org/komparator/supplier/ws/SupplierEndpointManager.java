@@ -4,12 +4,20 @@ import java.io.IOException;
 
 import javax.xml.ws.Endpoint;
 
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+
 
 /** End point manager */
 public class SupplierEndpointManager {
 
 	/** Web Service location to publish */
 	private String wsURL = null;
+	
+	private String wsName = null;
+	
+	private String uddiURL = null;
+	
+	private UDDINaming uddiNaming = null;
 
 	/** Port implementation */
 	private SupplierPortImpl portImpl = new SupplierPortImpl(this);
@@ -40,6 +48,14 @@ public class SupplierEndpointManager {
 			throw new NullPointerException("Web Service URL cannot be null!");
 		this.wsURL = wsURL;
 	}
+	
+	public SupplierEndpointManager(String wsURL, String wsName, String uddiURL) {
+		if (wsURL == null || wsName == null || uddiURL == null)
+			throw new NullPointerException("Web Service URL cannot be null!");
+		this.wsURL = wsURL;
+		this.wsName = wsName;
+		this.uddiURL = uddiURL;
+	}
 
 	/* end point management */
 
@@ -59,6 +75,7 @@ public class SupplierEndpointManager {
 			}
 			throw e;
 		}
+		publishToUDDI();
 	}
 
 	public void awaitConnections() {
@@ -90,6 +107,45 @@ public class SupplierEndpointManager {
 			}
 		}
 		this.portImpl = null;
+	}
+	
+	
+	/* UDDI */
+
+	void publishToUDDI() throws Exception {
+		try {
+			// publish to UDDI
+			if (uddiURL != null) {
+				if (verbose) {
+					System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
+				}
+				uddiNaming = new UDDINaming(uddiURL);
+				uddiNaming.rebind(wsName, wsURL);
+			}
+		} catch (Exception e) {
+			uddiNaming = null;
+			if (verbose) {
+				System.out.printf("Caught exception when binding to UDDI: %s%n", e);
+			}
+			throw e;
+		}
+	}
+
+	void unpublishFromUDDI() {
+		try {
+			if (uddiNaming != null) {
+				// delete from UDDI
+				uddiNaming.unbind(wsName);
+				if (verbose) {
+					System.out.printf("Unpublished '%s' from UDDI%n", wsName);
+				}
+				uddiNaming = null;
+			}
+		} catch (Exception e) {
+			if (verbose) {
+				System.out.printf("Caught exception when unbinding: %s%n", e);
+			}
+		}
 	}
 
 }
