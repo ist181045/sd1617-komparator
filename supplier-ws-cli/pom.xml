@@ -24,7 +24,7 @@
 
         <ws.url>http://localhost:8081/supplier-ws/endpoint</ws.url>
         <uddi.url>http://localhost:9090</uddi.url>
-        <ws.name>058_Supplier1</ws.name>
+        <ws.name>A58_Supplier1</ws.name>
         
     </properties>
 

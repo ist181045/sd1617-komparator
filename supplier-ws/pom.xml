@@ -25,7 +25,7 @@
 	    <ws.port>808${ws.i}</ws.port>
 	    <ws.url>http://${ws.host}:${ws.port}/supplier-ws/endpoint</ws.url>
 	    
-	    <ws.name>058_Supplier${ws.i}</ws.name>
+	    <ws.name>A58_Supplier${ws.i}</ws.name>
 	    
 	    <uddi.url>http://localhost:9090</uddi.url>
 	    
