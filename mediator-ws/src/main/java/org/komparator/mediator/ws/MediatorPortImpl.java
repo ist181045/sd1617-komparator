@@ -1,8 +1,16 @@
 package org.komparator.mediator.ws;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import javax.jws.WebService;
+
+import org.komparator.supplier.ws.cli.SupplierClient;
+import org.komparator.supplier.ws.cli.SupplierClientException;
+
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 
 @WebService(
 		endpointInterface = "org.komparator.mediator.ws.MediatorPortType", 
@@ -16,9 +24,17 @@ public class MediatorPortImpl implements MediatorPortType {
 
 	// end point manager
 	private MediatorEndpointManager endpointManager;
+	
+	private String uddiURL;
+	private String wsName;
+	
+	private List<SupplierClient> suppliers;
 
-	public MediatorPortImpl(MediatorEndpointManager endpointManager) {
+	public MediatorPortImpl(MediatorEndpointManager endpointManager, String uddiURL, String wsName) {
 		this.endpointManager = endpointManager;
+		
+		this.uddiURL = uddiURL;
+		this.wsName = wsName;
 	}
 
 	@Override
@@ -71,6 +87,36 @@ public class MediatorPortImpl implements MediatorPortType {
 		return null;
 	}
 
-	
+    /** UDDI lookup */
+    private void supplierLookup() throws MediatorException, SupplierClientException {
+    	Collection<UDDIRecord> uddi_records = null;
+        try {
+
+            UDDINaming uddiNaming = new UDDINaming(uddiURL);
+            uddi_records = uddiNaming.listRecords(wsName);
+
+        } catch (Exception e) {
+            String msg = String.format("Failed supplier lookup on uddi at %s!",
+                    uddiURL);
+            throw new MediatorException(msg, e);
+        }
+
+        if (uddi_records == null) {
+            String msg = String.format(
+                    "Suppliers with name %s not found on UDDI at %s", wsName,
+                    uddiURL);
+            throw new MediatorException(msg);
+        }
+        else {
+        	for(UDDIRecord element : uddi_records) {
+        		try {
+        			this.suppliers.add(new SupplierClient(this.uddiURL, element.getOrgName()));
+        		}
+        		catch (SupplierClientException sce) {
+        			//Possibly do stuff
+        		}
+        	}
+        }
+    }
 
 }
