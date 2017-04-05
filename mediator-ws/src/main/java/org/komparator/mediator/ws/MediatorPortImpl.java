@@ -31,33 +31,45 @@ public class MediatorPortImpl implements MediatorPortType {
 
     // end point manager
     private MediatorEndpointManager endpointManager;
-    
+
     //shopping carts
     private HashMap<String,CartView> carts;
+
+    // ItemView comparator
+    private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
+        String pid1 = iv1.getItemId().getProductId();
+        String pid2 = iv2.getItemId().getProductId();
+
+        int stringCompare = pid1.compareTo(pid2);
+
+        return stringCompare != 0
+                ? stringCompare
+                : iv2.getPrice() - iv1.getPrice();
+    };
 
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
     }
 
     @Override
-	public void clear() {
+    public void clear() {
         List<SupplierClient> suppliers;
-		try {
-			suppliers = supplierLookup();
-		} catch(MediatorException | SupplierClientException e) {
+        try {
+            suppliers = supplierLookup();
+        } catch (MediatorException | SupplierClientException e) {
             e.printStackTrace();
             return;
         }
 
-        for(SupplierClient supplier : suppliers) {
-			supplier.clear();
-		}
-		
-	}
+        for (SupplierClient supplier : suppliers) {
+            supplier.clear();
+        }
+
+    }
 
     @Override
     public List<ItemView> getItems(String productId) throws InvalidItemId_Exception {
-    	if (productId == null)
+        if (productId == null)
             throwInvalidItemId("Product ID cannot be null!");
         productId = productId.trim();
         if (productId.length() == 0)
@@ -65,32 +77,32 @@ public class MediatorPortImpl implements MediatorPortType {
 
         List<SupplierClient> suppliers;
         try {
-        	suppliers = supplierLookup();
-        } catch(MediatorException me) {
-        	//Handle things
+            suppliers = supplierLookup();
+        } catch (MediatorException me) {
+            //Handle things
             return null;
-        } catch(SupplierClientException sce) {
-        	//Handle other things
+        } catch (SupplierClientException sce) {
+            //Handle other things
             return null;
         }
-        
-        TreeSet<ItemView> products = new TreeSet<>(new ItemViewComparator());
-        for(SupplierClient supplier : suppliers) {
-        	ProductView productview = null;
-        	try {
+
+        TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
+        for (SupplierClient supplier : suppliers) {
+            ProductView productview = null;
+            try {
                 productview = supplier.getProduct(productId);
             } catch (BadProductId_Exception e) {
                 //Handle things
             }
-        	
-        	if(productview != null) {
-        		products.add(newItemView(productview, "Supplier_name"));
-        	}
+
+            if (productview != null) {
+                products.add(newItemView(productview, "Supplier_name"));
+            }
         }
 
         return new ArrayList<>(products);
     }
-    
+
 
     @Override
     public List<CartView> listCarts() {
@@ -114,7 +126,7 @@ public class MediatorPortImpl implements MediatorPortType {
             return null;
         }
 
-        TreeSet<ItemView> products = new TreeSet<>(new ItemViewComparator());
+        TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
         for (SupplierClient supplier : suppliers) {
             List<ProductView> productViews = null;
             try {
@@ -145,14 +157,14 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public void addToCart(String cartId, ItemIdView itemId, int itemQty) throws InvalidCartId_Exception,
             InvalidItemId_Exception, InvalidQuantity_Exception, NotEnoughItems_Exception {
-    	
+
     	// check cartID
         if (cartId == null)
             throwInvalidCartId("CartId cannot be null!");
         cartId = cartId.trim();
         if (cartId.length() == 0)
             throwInvalidCartId("CartId cannot be empty or whitespace!");
-        
+
         // check itemId
         String productId = itemId.getProductId();
         if (productId == null)
@@ -161,7 +173,7 @@ public class MediatorPortImpl implements MediatorPortType {
         if (productId.length() == 0)
             throwInvalidItemId("Product ID cannot be empty or whitespace!");
         itemId.setProductId(productId);
-        
+
         String supplierId = itemId.getSupplierId();
         if (supplierId == null)
             throwInvalidItemId("Supplier ID cannot be null!");
@@ -172,7 +184,7 @@ public class MediatorPortImpl implements MediatorPortType {
         //check invalid quantity
       	if (itemQty <= 0)
       		throwInvalidQuantity("Quantity cannot be 0 or negative!");
-      	
+
       	ProductView pv = null;
   		try {
 			SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
@@ -193,19 +205,19 @@ public class MediatorPortImpl implements MediatorPortType {
   				cv = new CartView();
   				cv.setCartId(cartId);
   			}
- 
+
   			ItemView iv = new ItemView();
 			iv.setDesc(pv.getDesc());
 			iv.setItemId(itemId);
 			iv.setPrice(pv.getPrice());
-			
+
 			CartItemView civ = new CartItemView();
 			civ.setItem(iv);
 			civ.setQuantity(itemQty);
-			
-			
-			cv.getItems().add(civ);	
-  		}      	
+
+
+			cv.getItems().add(civ);
+  		}
 
     }
 
@@ -275,19 +287,19 @@ public class MediatorPortImpl implements MediatorPortType {
         faultInfo.message = message;
         throw new InvalidCartId_Exception(message, faultInfo);
     }
-    
+
     private void throwInvalidItemId(final String message) throws InvalidItemId_Exception {
     	InvalidItemId faultInfo = new InvalidItemId();
         faultInfo.message = message;
         throw new InvalidItemId_Exception(message, faultInfo);
     }
-    
+
     private void throwInvalidQuantity(final String message) throws InvalidQuantity_Exception {
     	InvalidQuantity faultInfo = new InvalidQuantity();
         faultInfo.message = message;
         throw new InvalidQuantity_Exception(message, faultInfo);
     }
-    
+
     private void throwNotEnoughItems(final String message) throws NotEnoughItems_Exception {
     	NotEnoughItems faultInfo = new NotEnoughItems();
         faultInfo.message = message;
@@ -328,25 +340,6 @@ public class MediatorPortImpl implements MediatorPortType {
             }
 
             return suppliers;
-        }
-    }
-
-    class ItemViewComparator implements Comparator<ItemView> {
-
-        @Override
-        public int compare(ItemView iv1, ItemView iv2) {
-            String pId1 = iv1.getItemId().getProductId();
-            String pId2 = iv2.getItemId().getProductId();
-
-            int iP1 = iv1.getPrice();
-            int iP2 = iv2.getPrice();
-
-            int ola = pId1.compareTo(pId2);
-
-            if (ola != 0) {
-                return ola;
-            }
-            return (iP1 >= iP2 ? 1 : -1);
         }
     }
 }
