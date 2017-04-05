@@ -35,10 +35,19 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     @Override
-    public void clear() {
-        // TODO Auto-generated method stub
-
-    }
+	public void clear() {
+		try {
+			supplierLookup();
+		} catch(MediatorException me) {
+			
+		} catch(SupplierClientException sce) {
+			
+		}
+		for(SupplierClient supplier : suppliers) {
+			supplier.clear();
+		}
+		
+	}
 
     @Override
     public List<ItemView> getItems(String productId) throws InvalidItemId_Exception {
