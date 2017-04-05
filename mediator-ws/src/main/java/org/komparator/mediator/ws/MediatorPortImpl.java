@@ -146,20 +146,21 @@ public class MediatorPortImpl implements MediatorPortType {
 
     }
 
-    @Override
     public String ping(String arg0) {
         List<SupplierClient> suppliers;
         try {
             suppliers = supplierLookup();
         } catch (MediatorException | SupplierClientException e) {
-            return e.getMessage();
+            return "Error occurred: " + e.getMessage();
         }
 
         StringBuilder sb = new StringBuilder();
-        for (SupplierClient supplier : suppliers) {
-            sb.append(String.format("Response from %s: ", supplier.getWsURL()));
-            sb.append(supplier.ping(arg0));
-            sb.append("%n");
+        if (suppliers != null) {
+            for (SupplierClient supplier : suppliers) {
+                sb.append(String.format("Response from %s: ", supplier.getWsURL()));
+                sb.append(supplier.ping(arg0));
+                sb.append(System.lineSeparator());
+            }
         }
 
         return sb.toString();
