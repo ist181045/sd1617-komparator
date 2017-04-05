@@ -229,16 +229,18 @@ public class MediatorPortImpl implements MediatorPortType {
             return "Error occurred: " + e.getMessage();
         }
 
-        StringBuilder sb = new StringBuilder();
         if (suppliers != null) {
+            StringBuilder sb = new StringBuilder();
             for (SupplierClient supplier : suppliers) {
                 sb.append(String.format("Response from %s: ", supplier.getWsURL()));
                 sb.append(supplier.ping(arg0));
                 sb.append(System.lineSeparator());
             }
+
+            return sb.toString();
         }
 
-        return sb.toString();
+        return "No suppliers available";
     }
 
     @Override
