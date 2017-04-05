@@ -3,6 +3,7 @@ package org.komparator.mediator.ws;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -30,6 +31,9 @@ public class MediatorPortImpl implements MediatorPortType {
 
     // end point manager
     private MediatorEndpointManager endpointManager;
+    
+    //shopping carts
+    private HashMap<String,CartView> carts;
 
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
@@ -90,8 +94,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public List<CartView> listCarts() {
-        // TODO Auto-generated method stub
-        return null;
+        return new ArrayList<>(carts.values());
     }
 
     @Override
@@ -122,7 +125,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
             if (productViews != null) {
                 for (ProductView pv : productViews) {
-                    products.add(newItemView(pv, "supplier.getWsURL()"));
+                    products.add(newItemView(pv, "supplier.getWsName()"));
                 }
             }
 
@@ -142,7 +145,67 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public void addToCart(String cartId, ItemIdView itemId, int itemQty) throws InvalidCartId_Exception,
             InvalidItemId_Exception, InvalidQuantity_Exception, NotEnoughItems_Exception {
-        // TODO Auto-generated method stub
+    	
+    	// check cartID
+        if (cartId == null)
+            throwInvalidCartId("CartId cannot be null!");
+        cartId = cartId.trim();
+        if (cartId.length() == 0)
+            throwInvalidCartId("CartId cannot be empty or whitespace!");
+        
+        // check itemId
+        String productId = itemId.getProductId();
+        if (productId == null)
+            throwInvalidItemId("Product ID cannot be null!");
+        productId = productId.trim();
+        if (productId.length() == 0)
+            throwInvalidItemId("Product ID cannot be empty or whitespace!");
+        itemId.setProductId(productId);
+        
+        String supplierId = itemId.getSupplierId();
+        if (supplierId == null)
+            throwInvalidItemId("Supplier ID cannot be null!");
+        supplierId = supplierId.trim();
+        if (supplierId.length() == 0)
+            throwInvalidItemId("Supplier ID cannot be empty or whitespace!");
+        itemId.setProductId(supplierId);
+        //check invalid quantity
+      	if (itemQty <= 0)
+      		throwInvalidQuantity("Quantity cannot be 0 or negative!");
+      	
+      	ProductView pv = null;
+  		try {
+			SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
+			pv = supplier.getProduct(productId);
+		} catch (SupplierClientException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (BadProductId_Exception e) {
+			// ISTO NUNCA VAI ACONTECER
+			e.printStackTrace();
+		}
+  		if(pv != null) {
+  			if(pv.getQuantity() < itemQty) {
+  				throwNotEnoughItems("Quantity not available in supplier");
+  			}
+  			CartView cv = carts.get(cartId);
+  			if(cv == null) {
+  				cv = new CartView();
+  				cv.setCartId(cartId);
+  			}
+ 
+  			ItemView iv = new ItemView();
+			iv.setDesc(pv.getDesc());
+			iv.setItemId(itemId);
+			iv.setPrice(pv.getPrice());
+			
+			CartItemView civ = new CartItemView();
+			civ.setItem(iv);
+			civ.setQuantity(itemQty);
+			
+			
+			cv.getItems().add(civ);	
+  		}      	
 
     }
 
@@ -207,12 +270,30 @@ public class MediatorPortImpl implements MediatorPortType {
         throw new InvalidText_Exception(message, faultInfo);
     }
     
-    /** Helper method to throw new InvalidItemId exception */
-	private void throwInvalidItemId(final String message) throws InvalidItemId_Exception {
-		InvalidItemId faultInfo = new InvalidItemId();
-		faultInfo.message = message;
-		throw new InvalidItemId_Exception(message, faultInfo);
-	}
+    private void throwInvalidCartId(final String message) throws InvalidCartId_Exception {
+    	InvalidCartId faultInfo = new InvalidCartId();
+        faultInfo.message = message;
+        throw new InvalidCartId_Exception(message, faultInfo);
+    }
+    
+    private void throwInvalidItemId(final String message) throws InvalidItemId_Exception {
+    	InvalidItemId faultInfo = new InvalidItemId();
+        faultInfo.message = message;
+        throw new InvalidItemId_Exception(message, faultInfo);
+    }
+    
+    private void throwInvalidQuantity(final String message) throws InvalidQuantity_Exception {
+    	InvalidQuantity faultInfo = new InvalidQuantity();
+        faultInfo.message = message;
+        throw new InvalidQuantity_Exception(message, faultInfo);
+    }
+    
+    private void throwNotEnoughItems(final String message) throws NotEnoughItems_Exception {
+    	NotEnoughItems faultInfo = new NotEnoughItems();
+        faultInfo.message = message;
+        throw new NotEnoughItems_Exception(message, faultInfo);
+    }
+
     /**
      * UDDI supplier lookup
      */
