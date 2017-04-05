@@ -31,22 +31,21 @@ public class MediatorPortImpl implements MediatorPortType {
     // end point manager
     private MediatorEndpointManager endpointManager;
 
-    private List<SupplierClient> suppliers;
-
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
     }
 
     @Override
 	public void clear() {
+        List<SupplierClient> suppliers;
 		try {
-			supplierLookup();
-		} catch(MediatorException me) {
-			
-		} catch(SupplierClientException sce) {
-			
-		}
-		for(SupplierClient supplier : suppliers) {
+			suppliers = supplierLookup();
+		} catch(MediatorException | SupplierClientException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for(SupplierClient supplier : suppliers) {
 			supplier.clear();
 		}
 		
@@ -59,17 +58,19 @@ public class MediatorPortImpl implements MediatorPortType {
         productId = productId.trim();
         if (productId.length() == 0)
             throwInvalidItemId("Product ID cannot be empty or whitespace!");
-        
+
+        List<SupplierClient> suppliers;
         try {
-        	supplierLookup();
+        	suppliers = supplierLookup();
         } catch(MediatorException me) {
         	//Handle things
+            return null;
         } catch(SupplierClientException sce) {
         	//Handle other things
+            return null;
         }
         
-        TreeSet<ItemView> products = new TreeSet<ItemView>(new ItemViewComparator());
-        
+        TreeSet<ItemView> products = new TreeSet<>(new ItemViewComparator());
         for(SupplierClient supplier : suppliers) {
         	ProductView productview = null;
         	try {
@@ -82,9 +83,8 @@ public class MediatorPortImpl implements MediatorPortType {
         		products.add(newItemView(productview, "Supplier_name"));
         	}
         }
-        
-        
-        return new ArrayList<ItemView>(products);
+
+        return new ArrayList<>(products);
     }
     
 
@@ -103,33 +103,32 @@ public class MediatorPortImpl implements MediatorPortType {
         if (descText.length() == 0)
             throwInvalidText("Product description cannot be empty or whitespace!");
 
+        List<SupplierClient> suppliers;
         try {
-            supplierLookup();
-        } catch (MediatorException me) {
-
-        } catch (SupplierClientException sce) {
-
+            suppliers = supplierLookup();
+        } catch (MediatorException | SupplierClientException e) {
+            e.printStackTrace();
+            return null;
         }
-        TreeSet<ItemView> products = new TreeSet<>(new ItemViewComparator());
 
+        TreeSet<ItemView> products = new TreeSet<>(new ItemViewComparator());
         for (SupplierClient supplier : suppliers) {
-            List<ProductView> productviews = null;
+            List<ProductView> productViews = null;
             try {
-                productviews = supplier.searchProducts(descText);
+                productViews = supplier.searchProducts(descText);
             } catch (BadText_Exception e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
 
-            if (productviews != null) {
-                for (ProductView pv : productviews) {
+            if (productViews != null) {
+                for (ProductView pv : productViews) {
                     products.add(newItemView(pv, "supplier.getWsURL()"));
                 }
             }
 
         }
 
-        return new ArrayList<ItemView>(products);
+        return new ArrayList<>(products);
 
     }
 
@@ -149,10 +148,11 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public String ping(String arg0) {
+        List<SupplierClient> suppliers;
         try {
-            supplierLookup();
+            suppliers = supplierLookup();
         } catch (MediatorException | SupplierClientException e) {
-            e.printStackTrace();
+            return e.getMessage();
         }
 
         StringBuilder sb = new StringBuilder();
@@ -213,16 +213,17 @@ public class MediatorPortImpl implements MediatorPortType {
 		throw new InvalidItemId_Exception(message, faultInfo);
 	}
     /**
-     * UDDI lookup
+     * UDDI supplier lookup
      */
-    private void supplierLookup() throws MediatorException, SupplierClientException {
-        Collection<UDDIRecord> uddiRecords = null;
+    private List<SupplierClient> supplierLookup() throws MediatorException,
+            SupplierClientException {
+        Collection<UDDIRecord> uddiRecords;
         String uddiURL = endpointManager.getUddiURL();
 
         try {
 
             UDDINaming uddiNaming = new UDDINaming(uddiURL);
-            uddiRecords = uddiNaming.listRecords("%Supplier%");
+            uddiRecords = uddiNaming.listRecords("A58_Supplier%");
 
         } catch (Exception e) {
             String msg = String.format("Failed supplier lookup on uddi at %s!",
@@ -232,17 +233,19 @@ public class MediatorPortImpl implements MediatorPortType {
 
         if (uddiRecords == null) {
             String msg = String.format(
-                    "Suppliers with name estupido not found on UDDI at %s", uddiURL);
+                    "A58 suppliers not found on UDDI at %s", uddiURL);
             throw new MediatorException(msg);
         } else {
-            suppliers = new ArrayList<>();
+            List<SupplierClient> suppliers = new ArrayList<>();
             for (UDDIRecord element : uddiRecords) {
                 try {
-                    this.suppliers.add(new SupplierClient(uddiURL, element.getOrgName()));
+                    suppliers.add(new SupplierClient(uddiURL, element.getOrgName()));
                 } catch (SupplierClientException sce) {
-                    //Possibly do stuff
+                    sce.printStackTrace();
                 }
             }
+
+            return suppliers;
         }
     }
 
