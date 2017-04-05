@@ -1,18 +1,21 @@
 package org.komparator.mediator.ws;
 
-import javax.jws.WebService;
-import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
-import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.TreeSet;
+
+import javax.jws.WebService;
+
+import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadText_Exception;
 import org.komparator.supplier.ws.ProductView;
 import org.komparator.supplier.ws.cli.SupplierClient;
 import org.komparator.supplier.ws.cli.SupplierClientException;
+
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 
 
 @WebService(
@@ -51,9 +54,39 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public List<ItemView> getItems(String productId) throws InvalidItemId_Exception {
-        // TODO Auto-generated method stub
-        return null;
+    	if (productId == null)
+            throwInvalidItemId("Product ID cannot be null!");
+        productId = productId.trim();
+        if (productId.length() == 0)
+            throwInvalidItemId("Product ID cannot be empty or whitespace!");
+        
+        try {
+        	supplierLookup();
+        } catch(MediatorException me) {
+        	//Handle things
+        } catch(SupplierClientException sce) {
+        	//Handle other things
+        }
+        
+        TreeSet<ItemView> products = new TreeSet<ItemView>(new ItemViewComparator());
+        
+        for(SupplierClient supplier : suppliers) {
+        	ProductView productview = null;
+        	try {
+                productview = supplier.getProduct(productId);
+            } catch (BadProductId_Exception e) {
+                //Handle things
+            }
+        	
+        	if(productview != null) {
+        		products.add(newItemView(productview, "Supplier_name"));
+        	}
+        }
+        
+        
+        return new ArrayList<ItemView>(products);
     }
+    
 
     @Override
     public List<CartView> listCarts() {
@@ -172,7 +205,13 @@ public class MediatorPortImpl implements MediatorPortType {
         faultInfo.message = message;
         throw new InvalidText_Exception(message, faultInfo);
     }
-
+    
+    /** Helper method to throw new InvalidItemId exception */
+	private void throwInvalidItemId(final String message) throws InvalidItemId_Exception {
+		InvalidItemId faultInfo = new InvalidItemId();
+		faultInfo.message = message;
+		throw new InvalidItemId_Exception(message, faultInfo);
+	}
     /**
      * UDDI lookup
      */
