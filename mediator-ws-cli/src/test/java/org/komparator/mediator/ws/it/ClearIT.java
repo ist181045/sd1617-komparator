@@ -26,6 +26,8 @@ public class ClearIT extends BaseIT {
 			sc1 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier1");
 			sc2 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier2");
 			
+			// clear remote services state before all tests
+			
 			sc1.clear();
 			sc2.clear();
 			
@@ -55,16 +57,18 @@ public class ClearIT extends BaseIT {
 					sc2.createProduct(product);
 				}
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// TODO Auto-generated catch block
+				//All tests will fail cause Suppliers are empty
 				e.printStackTrace();
 			}
 			
 		} catch (SupplierClientException e) {
-			// TODO Auto-generated catch block
+			//Couldn't create SupplierClients. All tests will fail
 			e.printStackTrace();
 		}
 		
 	}
+	
+	//Success test case
 
 	@Test
 	public void clearMultipleSuppliers() {
