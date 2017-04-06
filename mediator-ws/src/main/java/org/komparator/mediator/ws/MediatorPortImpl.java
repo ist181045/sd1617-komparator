@@ -1,12 +1,16 @@
 package org.komparator.mediator.ws;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.jws.WebService;
 
@@ -35,6 +39,10 @@ public class MediatorPortImpl implements MediatorPortType {
 
     //shopping carts
     private Map<String,CartView> carts = new HashMap<>();
+
+    // shopping history
+    private Map<LocalDateTime, ShoppingResultView> shoppingHistory
+            = new TreeMap<>();
 
     // ItemView comparator
     private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
@@ -255,9 +263,8 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     @Override
-    public List<ShoppingResultView> shopHistory() {
-        // TODO Auto-generated method stub
-        return null;
+    public synchronized List<ShoppingResultView> shopHistory() {
+        return new ArrayList<>(shoppingHistory.values());
     }
 
     // View helpers ----------------------------------------------------------
