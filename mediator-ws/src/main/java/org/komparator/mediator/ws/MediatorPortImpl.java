@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeSet;
 
 import javax.jws.WebService;
@@ -33,7 +34,7 @@ public class MediatorPortImpl implements MediatorPortType {
     private MediatorEndpointManager endpointManager;
 
     //shopping carts
-    private HashMap<String,CartView> carts;
+    private Map<String,CartView> carts = new HashMap<>();
 
     // ItemView comparator
     private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
@@ -106,7 +107,10 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public List<CartView> listCarts() {
-        return new ArrayList<>(carts.values());
+    	if (carts.values().isEmpty())
+    		return new ArrayList<>(carts.values());
+    	else 
+    		return new ArrayList<>();
     }
 
     @Override
@@ -217,6 +221,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
 
 			cv.getItems().add(civ);
+			carts.put(cartId, cv);
   		}
 
     }
