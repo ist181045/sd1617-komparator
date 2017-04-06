@@ -110,10 +110,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public List<CartView> listCarts() {
-    	if (carts.values().isEmpty())
-    		return new ArrayList<>(carts.values());
-    	else 
-    		return new ArrayList<>();
+        return new ArrayList<>(carts.values());
     }
 
     @Override
