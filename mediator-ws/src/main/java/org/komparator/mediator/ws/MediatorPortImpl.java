@@ -92,10 +92,10 @@ public class MediatorPortImpl implements MediatorPortType {
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-            //Handle things
+        	me.printStackTrace();
             return null;
         } catch (SupplierClientException sce) {
-            //Handle other things
+        	sce.printStackTrace();
             return null;
         }
         
@@ -107,7 +107,8 @@ public class MediatorPortImpl implements MediatorPortType {
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
-                    //Handle things
+                	e.printStackTrace();
+                    return null;
                 }
 
                 if (productview != null) {
