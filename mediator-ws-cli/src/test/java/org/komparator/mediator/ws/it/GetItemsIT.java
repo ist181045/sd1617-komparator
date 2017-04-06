@@ -106,7 +106,7 @@ public class GetItemsIT extends BaseIT {
 			product.setId(PRODUCT3_ID);
 			product.setDesc(PRODUCT3_DESC);
 			product.setPrice(23);
-			product.setQuantity(0);
+			product.setQuantity(3);
 			try {
 				supplierClient2.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
