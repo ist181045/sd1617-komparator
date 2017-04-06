@@ -9,9 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-	
+
 import javax.jws.WebService;
 
 import org.komparator.supplier.ws.BadProductId_Exception;
@@ -76,6 +74,9 @@ public class MediatorPortImpl implements MediatorPortType {
         
         //Reset carts
         carts.clear();
+        
+        //Reset history
+        shoppingHistory.clear();
 
     }
 
@@ -198,7 +199,8 @@ public class MediatorPortImpl implements MediatorPortType {
         supplierId = supplierId.trim();
         if (supplierId.length() == 0)
             throwInvalidItemId("Supplier ID cannot be empty or whitespace!");
-        itemId.setProductId(supplierId);
+        itemId.setSupplierId(supplierId);
+        
         //check invalid quantity
       	if (itemQty <= 0)
       		throwInvalidQuantity("Quantity cannot be 0 or negative!");
@@ -206,13 +208,16 @@ public class MediatorPortImpl implements MediatorPortType {
       	ProductView pv = null;
   		try {
 			SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
-			pv = supplier.getProduct(productId);
+			synchronized(this) {
+				pv = supplier.getProduct(productId);
+			}
 		} catch (SupplierClientException e) {
-			// TODO Auto-generated catch block
+			System.err.println("Supplier Connection Error");
 			e.printStackTrace();
+			return;
 		} catch (BadProductId_Exception e) {
-			// ISTO NUNCA VAI ACONTECER
-			e.printStackTrace();
+			throwInvalidItemId("Product ID exception on Supplier");
+			return;
 		}
   		if(pv != null) {
   			if(pv.getQuantity() < itemQty) {
@@ -224,18 +229,19 @@ public class MediatorPortImpl implements MediatorPortType {
   				cv.setCartId(cartId);
   			}
 
-  			ItemView iv = new ItemView();
-			iv.setDesc(pv.getDesc());
-			iv.setItemId(itemId);
-			iv.setPrice(pv.getPrice());
-
+  			
+  			ItemView iv = newItemView(pv, supplierId);
 			CartItemView civ = new CartItemView();
+			
 			civ.setItem(iv);
 			civ.setQuantity(itemQty);
 
-
+			
 			cv.getItems().add(civ);
-			carts.put(cartId, cv);
+			
+			synchronized(this) {
+				carts.put(cartId, cv);
+			}
   		}
 
     }
@@ -288,16 +294,7 @@ public class MediatorPortImpl implements MediatorPortType {
         view.setPrice(pv.getPrice());
         return view;
     }
-    /*
-	private PurchaseView newPurchaseView(Purchase purchase) {
-		PurchaseView view = new PurchaseView();
-		view.setId(purchase.getPurchaseId());
-		view.setProductId(purchase.getProductId());
-		view.setQuantity(purchase.getQuantity());
-		view.setUnitPrice(purchase.getUnitPrice());
-		return view;
-	}
-	*/
+
     // Exception helpers -----------------------------------------------------
 
     /**
