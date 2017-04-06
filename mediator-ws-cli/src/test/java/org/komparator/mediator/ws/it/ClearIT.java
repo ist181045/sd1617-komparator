@@ -26,6 +26,9 @@ public class ClearIT extends BaseIT {
 			sc1 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier1");
 			sc2 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier2");
 			
+			sc1.clear();
+			sc2.clear();
+			
 			try {
 				{
 					ProductView product = new ProductView();

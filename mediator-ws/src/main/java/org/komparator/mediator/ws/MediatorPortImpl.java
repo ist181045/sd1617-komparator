@@ -65,6 +65,9 @@ public class MediatorPortImpl implements MediatorPortType {
         for (SupplierClient supplier : suppliers) {
             supplier.clear();
         }
+        
+        //Reset carts
+        carts.clear();
 
     }
 
