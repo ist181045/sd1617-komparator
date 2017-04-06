@@ -107,6 +107,7 @@ public class SupplierEndpointManager {
 			}
 		}
 		this.portImpl = null;
+		unpublishFromUDDI();
 	}
 	
 	
