@@ -222,6 +222,13 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     public String ping(String arg0) {
+        if (arg0 == null || arg0.trim().length() == 0 ||
+                arg0.trim().matches(".*[\\r\\n\\t]+.*")) {
+            return "Invalid ping argument!";
+        }
+
+        arg0 = arg0.trim();
+
         List<SupplierClient> suppliers;
         try {
             suppliers = supplierLookup();
@@ -240,7 +247,7 @@ public class MediatorPortImpl implements MediatorPortType {
             return sb.toString();
         }
 
-        return "No suppliers available";
+        return "No suppliers available!";
     }
 
     @Override
