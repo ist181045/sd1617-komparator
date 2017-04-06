@@ -11,7 +11,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
+	
 import javax.jws.WebService;
 
 import org.komparator.supplier.ws.BadProductId_Exception;
@@ -97,18 +97,21 @@ public class MediatorPortImpl implements MediatorPortType {
             //Handle other things
             return null;
         }
-
+        
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-        for (SupplierClient supplier : suppliers) {
-            ProductView productview = null;
-            try {
-                productview = supplier.getProduct(productId);
-            } catch (BadProductId_Exception e) {
-                //Handle things
-            }
+        
+        synchronized(this) {
+            for (SupplierClient supplier : suppliers) {
+                ProductView productview = null;
+                try {
+                    productview = supplier.getProduct(productId);
+                } catch (BadProductId_Exception e) {
+                    //Handle things
+                }
 
-            if (productview != null) {
-                products.add(newItemView(productview, supplier.getWsName()));
+                if (productview != null) {
+                    products.add(newItemView(productview, supplier.getWsName()));
+                }
             }
         }
 
@@ -116,7 +119,7 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     @Override
-    public List<CartView> listCarts() {
+    public synchronized List<CartView> listCarts() {
         return new ArrayList<>(carts.values());
     }
 
@@ -138,21 +141,25 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-        for (SupplierClient supplier : suppliers) {
-            List<ProductView> productViews = null;
-            try {
-                productViews = supplier.searchProducts(descText);
-            } catch (BadText_Exception e) {
-                e.printStackTrace();
-            }
-
-            if (productViews != null) {
-                for (ProductView pv : productViews) {
-                    products.add(newItemView(pv, supplier.getWsName()));
+        
+        synchronized(this) {
+        	for (SupplierClient supplier : suppliers) {
+                List<ProductView> productViews = null;
+                try {
+                    productViews = supplier.searchProducts(descText);
+                } catch (BadText_Exception e) {
+                    e.printStackTrace();
                 }
-            }
 
+                if (productViews != null) {
+                    for (ProductView pv : productViews) {
+                        products.add(newItemView(pv, supplier.getWsName()));
+                    }
+                }
+
+            }
         }
+        
 
         return new ArrayList<>(products);
 
