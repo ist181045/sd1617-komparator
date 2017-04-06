@@ -30,6 +30,9 @@ public class GetItemsIT extends BaseIT {
 	private static final String PRODUCT3_ID = "Z3";
 	private static final String PRODUCT3_DESC = "Baseball";
 	
+	private static final String SUPPLIER1_ID = "A58_Supplier1";
+	private static final String SUPPLIER2_ID = "A58_Supplier2";
+	
 	
 	@BeforeClass
 	public static void oneTimeSetUp() {
@@ -40,8 +43,8 @@ public class GetItemsIT extends BaseIT {
 		SupplierClient supplierClient2 = null;
 		
 		try {
-			supplierClient1 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier1");
-			supplierClient2 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier2");
+			supplierClient1 = new SupplierClient(testProps.getProperty("uddi.url"), SUPPLIER1_ID);
+			supplierClient2 = new SupplierClient(testProps.getProperty("uddi.url"), SUPPLIER2_ID);
 		} catch (SupplierClientException e) {
 			// handle cenas
 		}
@@ -152,7 +155,7 @@ public class GetItemsIT extends BaseIT {
 		assertEquals(PRODUCT2_ID, result.get(0).getItemId().getProductId());
 		assertEquals(PRODUCT2_DESC, result.get(0).getDesc());
 		assertEquals(30, result.get(0).getPrice());
-		//assert supplier ID
+		assertEquals(SUPPLIER1_ID, result.get(0).getItemId().getSupplierId());
 	}
 	
 	@Test
@@ -163,9 +166,13 @@ public class GetItemsIT extends BaseIT {
 		
 		assertEquals(PRODUCT1_ID, result.get(0).getItemId().getProductId());
 		assertEquals(PRODUCT1_DESC, result.get(0).getDesc());
+		assertEquals(SUPPLIER1_ID, result.get(0).getItemId().getSupplierId());
+		assertEquals(10, result.get(0).getPrice());
 		
 		assertEquals(PRODUCT1_ID, result.get(1).getItemId().getProductId());
 		assertEquals(PRODUCT1_DESC, result.get(1).getDesc());
+		assertEquals(SUPPLIER2_ID, result.get(1).getItemId().getSupplierId());
+		assertEquals(20, result.get(1).getPrice());
 	}
 	
 	
