@@ -94,10 +94,10 @@ public class MediatorPortImpl implements MediatorPortType {
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-        	me.printStackTrace();
+            me.printStackTrace();
             return null;
         } catch (SupplierClientException sce) {
-        	sce.printStackTrace();
+            sce.printStackTrace();
             return null;
         }
 
@@ -109,7 +109,7 @@ public class MediatorPortImpl implements MediatorPortType {
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
-                	e.printStackTrace();
+                    e.printStackTrace();
                     return null;
                 }
 
@@ -173,7 +173,7 @@ public class MediatorPortImpl implements MediatorPortType {
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception, InvalidCreditCard_Exception {
         if (cartId == null || cartId.trim().length() == 0)
-            throwInvalidCartId("Cart ID given is invalid!");
+            throwInvalidCartId("Cart ID given is null or empty!");
 
         CartView cv = carts.get(cartId.trim());
         if (cv == null)
@@ -183,7 +183,13 @@ public class MediatorPortImpl implements MediatorPortType {
             throwEmptyCart("Cart with the given ID is empty!");
 
         if (creditCardNr == null || creditCardNr.trim().length() == 0)
-            throwInvalidCreditCard("Credit Card number given is invalid!");
+            throwInvalidCreditCard("Credit Card number given is null or empty!");
+
+        try {
+            Integer.parseInt(creditCardNr.trim());
+        } catch (NumberFormatException nfe) {
+            throwInvalidCreditCard("Credit Card number given is not a number!");
+        }
 
         Collection<String> ccURLs;
         try {
