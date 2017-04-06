@@ -33,8 +33,6 @@ public class SearchItemsIT extends BaseIT {
 	@BeforeClass
 	public static void oneTimeSetUp() {
 
-
-
 		try {
 			sc1 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier1");
 			sc2 = new SupplierClient(testProps.getProperty("uddi.url"), "A58_Supplier2");
