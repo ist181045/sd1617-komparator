@@ -56,18 +56,23 @@ public class PingIT extends BaseIT {
 
     @Test
     public void pingReplyFromMultipleSuppliers() {
-        // Requires n (in this case, 3) suppliers running
+        // Requires 2 suppliers running
         String response = mediatorClient.ping("test");
 
-        assertEquals(3, response.split(System.lineSeparator()).length);
+        assertEquals(2, response.split(System.lineSeparator()).length);
     }
 
     @Test
     public void pingAssertResponse() {
-        // Thank you white-box testing (at least one supplier running)
-        String response = mediatorClient.ping("test").split("\n")[0];
+        // Thank you white-box testing (2 suppliers running)
+        String response = mediatorClient.ping("test");
+        String[] responseArr = response.split(System.lineSeparator());
 
-        assertTrue(response.startsWith("Response from"));
-        assertTrue(response.endsWith("Hello test from Supplier"));
+        for (String s : responseArr) {
+            // see MediatorPortImpl#ping(java.lang.String)
+            assertTrue(s.startsWith("Response from"));
+            // see SupplierPortImpl#ping(java.lang.String)
+            assertTrue(s.endsWith("Hello test from Supplier"));
+        }
     }
 }
