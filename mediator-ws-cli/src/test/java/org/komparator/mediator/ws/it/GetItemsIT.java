@@ -1,6 +1,7 @@
 package org.komparator.mediator.ws.it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.util.List;
 
@@ -46,7 +47,7 @@ public class GetItemsIT extends BaseIT {
 			supplierClient1 = new SupplierClient(testProps.getProperty("uddi.url"), SUPPLIER1_ID);
 			supplierClient2 = new SupplierClient(testProps.getProperty("uddi.url"), SUPPLIER2_ID);
 		} catch (SupplierClientException e) {
-			// handle cenas
+			fail();
 		}
 		
 		{
@@ -58,7 +59,7 @@ public class GetItemsIT extends BaseIT {
 			try {
 				supplierClient1.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// handle mais cenas
+				fail();
 			}
 		}
 		
@@ -71,7 +72,7 @@ public class GetItemsIT extends BaseIT {
 			try {
 				supplierClient2.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// handle mais cenas
+				fail();
 			}
 		}
 		
@@ -84,7 +85,7 @@ public class GetItemsIT extends BaseIT {
 			try {
 				supplierClient1.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// handle mais cenas
+				fail();
 			}
 		}
 		
@@ -97,7 +98,7 @@ public class GetItemsIT extends BaseIT {
 			try {
 				supplierClient1.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// handle mais cenas
+				fail();
 			}
 		}
 		
@@ -110,7 +111,7 @@ public class GetItemsIT extends BaseIT {
 			try {
 				supplierClient2.createProduct(product);
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				// handle mais cenas
+				fail();
 			}
 		}
 	}
