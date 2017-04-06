@@ -177,17 +177,18 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidCartId("Cart ID given is null, empty or contains "
                 + "whitespace characters!");
 
+        if (creditCardNr == null || creditCardNr.trim().length() == 0
+                || creditCardNr.matches(".*[\r\n\t]+.*")) {
+            throwInvalidCreditCard("Credit Card number given is null, empty "
+                + "or contains whitespace characters!");
+        }
+
         CartView cv = carts.get(cartId.trim());
         if (cv == null)
             throwInvalidCartId("Cart with the given ID couldn't be found!");
 
         if (cv.getItems().isEmpty())
             throwEmptyCart("Cart with the given ID is empty!");
-
-        if (creditCardNr == null || creditCardNr.trim().length() == 0
-                || creditCardNr.matches(".*[\r\n\t]+.*"))
-            throwInvalidCreditCard("Credit Card number given is null, empty "
-                + "or contains whitespace characters!");
 
         try {
             Integer.parseInt(creditCardNr.trim());
@@ -404,10 +405,10 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     private void throwInvalidCreditCard(final String message)
-            throws InvalidCartId_Exception {
-        InvalidCartId faultInfo = new InvalidCartId();
+            throws InvalidCreditCard_Exception {
+        InvalidCreditCard faultInfo = new InvalidCreditCard();
         faultInfo.message = message;
-        throw new InvalidCartId_Exception(message, faultInfo);
+        throw new InvalidCreditCard_Exception(message, faultInfo);
     }
 
     /**
