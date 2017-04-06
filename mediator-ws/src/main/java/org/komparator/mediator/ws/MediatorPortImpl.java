@@ -45,7 +45,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
         return stringCompare != 0
                 ? stringCompare
-                : iv2.getPrice() - iv1.getPrice();
+                : iv1.getPrice() - iv2.getPrice();
     };
 
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
@@ -100,7 +100,7 @@ public class MediatorPortImpl implements MediatorPortType {
             }
 
             if (productview != null) {
-                products.add(newItemView(productview, "Supplier_name"));
+                products.add(newItemView(productview, supplier.getWsName()));
             }
         }
 
@@ -140,7 +140,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
             if (productViews != null) {
                 for (ProductView pv : productViews) {
-                    products.add(newItemView(pv, "supplier.getWsName()"));
+                    products.add(newItemView(pv, supplier.getWsName()));
                 }
             }
 
@@ -347,6 +347,7 @@ public class MediatorPortImpl implements MediatorPortType {
             for (UDDIRecord element : uddiRecords) {
                 try {
                 	SupplierClient temp = new SupplierClient(element.getUrl());
+                	temp.setWsName(element.getOrgName());
                 	if(temp.ping("A58_Mediator") != null)
                 		suppliers.add(temp);
                     

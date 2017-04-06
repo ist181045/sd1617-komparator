@@ -38,10 +38,19 @@ public class SupplierClient implements SupplierPortType {
 	
 	private String uddiURL = null;
 	private String wsName = null;
+	
+	public String getWsName() {
+		return wsName;
+	}
 
 	public String getWsURL() {
 		return wsURL;
 	}
+	
+	public void setWsName(String name) {
+		wsName = name;
+	}
+	
 
 	/** output option **/
 	private boolean verbose = false;
@@ -59,6 +68,7 @@ public class SupplierClient implements SupplierPortType {
 		this.wsURL = wsURL;
 		createStub();
 	}
+	
 	
 	public SupplierClient(String uddiURL, String wsName) throws SupplierClientException {
 		this.uddiURL = uddiURL;
