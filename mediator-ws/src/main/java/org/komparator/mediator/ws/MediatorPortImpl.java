@@ -107,7 +107,6 @@ public class MediatorPortImpl implements MediatorPortType {
         return new ArrayList<>(products);
     }
 
-
     @Override
     public List<CartView> listCarts() {
         return new ArrayList<>(carts.values());
@@ -348,9 +347,8 @@ public class MediatorPortImpl implements MediatorPortType {
             for (UDDIRecord element : uddiRecords) {
                 try {
                 	SupplierClient temp = new SupplierClient(element.getUrl());
-                	temp.ping("A58_Mediator");
-                    
-                	suppliers.add(temp);
+                	if(temp.ping("A58_Mediator") != null)
+                		suppliers.add(temp);
                     
                 } catch (SupplierClientException sce) {
                     sce.printStackTrace();
