@@ -47,6 +47,13 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        <!-- Supplier Client - Testing purposes -->
+        <dependency>
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>supplier-ws-cli</artifactId>
+            <version>1.0-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
