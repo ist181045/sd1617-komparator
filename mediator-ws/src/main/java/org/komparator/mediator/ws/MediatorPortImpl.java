@@ -3,10 +3,12 @@ package org.komparator.mediator.ws;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -23,7 +25,6 @@ import org.komparator.supplier.ws.cli.SupplierClientException;
 import pt.ulisboa.tecnico.sdis.ws.cli.CreditCardClient;
 import pt.ulisboa.tecnico.sdis.ws.cli.CreditCardClientException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
-import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINamingException;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 
 
@@ -54,7 +55,7 @@ public class MediatorPortImpl implements MediatorPortType {
     //shopping carts
     private Map<String, CartView> carts = new HashMap<>();
     // shopping history
-    private Map<LocalDateTime, ShoppingResultView> shoppingHistory
+    private SortedMap<LocalDateTime, ShoppingResultView> shoppingHistory
             = new TreeMap<>();
 
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
@@ -219,6 +220,8 @@ public class MediatorPortImpl implements MediatorPortType {
                     try {
                         supplier.buyProduct(pid, quantity);
                         srv.getPurchasedItems().add(civ);
+                        srv.totalPrice += civ.getQuantity()
+                                * civ.getItem().getPrice();
                     } catch (BadProductId_Exception
                             | InsufficientQuantity_Exception
                             | BadQuantity_Exception e) {
