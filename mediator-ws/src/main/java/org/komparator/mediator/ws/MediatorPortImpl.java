@@ -274,6 +274,9 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidCartId("CartId cannot be empty or whitespace!");
 
         // check itemId
+        if (itemId == null)
+            throwInvalidItemId("Item ID cannot be null!");
+
         String productId = itemId.getProductId();
         if (productId == null)
             throwInvalidItemId("Product ID cannot be null!");
@@ -353,7 +356,8 @@ public class MediatorPortImpl implements MediatorPortType {
         if (suppliers != null) {
             StringBuilder sb = new StringBuilder();
             for (SupplierClient supplier : suppliers) {
-                sb.append(String.format("Response from %s: ", supplier.getWsName()));
+                sb.append(String.format("Response from %s: ",
+                        supplier.getWsName()));
                 sb.append(supplier.ping(arg0));
                 sb.append(System.lineSeparator());
             }
