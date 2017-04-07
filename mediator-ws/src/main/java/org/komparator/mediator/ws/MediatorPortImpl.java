@@ -48,6 +48,7 @@ public class MediatorPortImpl implements MediatorPortType {
                 ? stringCompare
                 : iv1.getPrice() - iv2.getPrice();
     };
+    public static final String CREDIT_CARD_WS_URL = "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
     // end point manager
     private MediatorEndpointManager endpointManager;
     //shopping carts
@@ -183,43 +184,31 @@ public class MediatorPortImpl implements MediatorPortType {
                 + "or contains whitespace characters!");
         }
 
-        CartView cv = carts.get(cartId.trim());
-        if (cv == null)
-            throwInvalidCartId("Cart with the given ID couldn't be found!");
-
-        if (cv.getItems().isEmpty())
-            throwEmptyCart("Cart with the given ID is empty!");
-
         try {
             Integer.parseInt(creditCardNr.trim());
         } catch (NumberFormatException nfe) {
             throwInvalidCreditCard("Credit Card number given is not a number!");
         }
 
-        Collection<String> ccURLs;
+        CreditCardClient ccClient;
         try {
-            UDDINaming uddiNaming = new UDDINaming(endpointManager.getUddiURL());
-            ccURLs = uddiNaming.list("CreditCard");
-        } catch (UDDINamingException e) {
-            e.printStackTrace();
+            ccClient = new CreditCardClient(CREDIT_CARD_WS_URL);
+        } catch (CreditCardClientException e) {
+            System.err.println("Couldn't communicate with CreditCard web "
+                    + "service: " + e.getMessage());
             return null;
         }
-
-        boolean ccValid = false;
-        for (String ccURL : ccURLs) {
-            try {
-                CreditCardClient ccClient = new CreditCardClient(ccURL);
-                ccValid = ccClient.validateNumber(creditCardNr);
-
-                if (ccValid) break;
-            } catch (CreditCardClientException ccce) {
-                throwInvalidCreditCard(ccce.getMessage());
-            }
-        }
-
-        if (!ccValid)
+        if (!ccClient.validateNumber(creditCardNr)) {
             throwInvalidCreditCard("Credit card number given couldn't "
                     + "be validated!");
+        }
+
+        CartView cv = carts.get(cartId.trim());
+        if (cv == null)
+            throwInvalidCartId("Cart with the given ID couldn't be found!");
+
+        if (cv.getItems().isEmpty())
+            throwEmptyCart("Cart with the given ID is empty!");
 
         List<SupplierClient> suppliers;
         try {
