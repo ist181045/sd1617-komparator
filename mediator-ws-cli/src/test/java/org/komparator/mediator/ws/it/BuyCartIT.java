@@ -7,25 +7,16 @@ import static org.junit.Assert.fail;
 import java.util.List;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import org.komparator.mediator.ws.CartItemView;
-import org.komparator.mediator.ws.EmptyCart_Exception;
-import org.komparator.mediator.ws.InvalidCartId_Exception;
-import org.komparator.mediator.ws.InvalidCreditCard_Exception;
-import org.komparator.mediator.ws.InvalidItemId_Exception;
-import org.komparator.mediator.ws.InvalidQuantity_Exception;
 import org.komparator.mediator.ws.ItemIdView;
-import org.komparator.mediator.ws.NotEnoughItems_Exception;
 import org.komparator.mediator.ws.Result;
 import org.komparator.mediator.ws.ShoppingResultView;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadProduct_Exception;
-import org.komparator.supplier.ws.BadQuantity_Exception;
-import org.komparator.supplier.ws.InsufficientQuantity_Exception;
 import org.komparator.supplier.ws.ProductView;
 import org.komparator.supplier.ws.cli.SupplierClient;
 import org.komparator.supplier.ws.cli.SupplierClientException;
