@@ -4,12 +4,12 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import javax.jws.WebService;
 
@@ -48,11 +48,15 @@ public class MediatorPortImpl implements MediatorPortType {
                 ? stringCompare
                 : iv1.getPrice() - iv2.getPrice();
     };
-    public static final String CREDIT_CARD_WS_URL = "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
+
+    private static final String CREDIT_CARD_WS_URL = "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
+
     // end point manager
     private MediatorEndpointManager endpointManager;
-    //shopping carts
-    private Map<String, CartView> carts = new HashMap<>();
+
+    // shopping carts
+    private ConcurrentMap<String, CartView> carts = new ConcurrentHashMap<>();
+
     // shopping history
     private SortedMap<LocalDateTime, ShoppingResultView> shoppingHistory
             = new TreeMap<>();
@@ -67,10 +71,10 @@ public class MediatorPortImpl implements MediatorPortType {
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-        	System.err.println("Mediator lookup failed: "
+            System.err.println("Mediator lookup failed: "
                     + me.getMessage());
-        	return;
-    	}
+            return;
+        }
 
         for (SupplierClient supplier : suppliers) {
             supplier.clear();
@@ -93,14 +97,14 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidItemId("Product ID cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
-        
+
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-        	System.err.println("Mediator lookup failed: "
+            System.err.println("Mediator lookup failed: "
                     + me.getMessage());
-        	return null;
-    	} 
+            return null;
+        }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
 
@@ -110,7 +114,7 @@ public class MediatorPortImpl implements MediatorPortType {
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
-                	System.err.println("Could not get product: "
+                    System.err.println("Could not get product: "
                             + e.getMessage());
                     return null;
                 }
@@ -119,7 +123,7 @@ public class MediatorPortImpl implements MediatorPortType {
                     products.add(newItemView(productview, supplier.getWsName()));
                 }
             }
-        } 
+        }
 
         return new ArrayList<>(products);
     }
@@ -139,14 +143,14 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidText("Product description cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
-        
+
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-        	System.err.println("Mediator lookup failed: "
+            System.err.println("Mediator lookup failed: "
                     + me.getMessage());
-        	return null;
-    	} 
+            return null;
+        }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
 
@@ -175,20 +179,19 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception, InvalidCreditCard_Exception {
-    	
+
         if (cartId == null || cartId.trim().length() == 0
                 || cartId.matches(".*[\r\n\t]+.*"))
             throwInvalidCartId("Cart ID given is null, empty or contains "
-                + "whitespace characters!");
+                    + "whitespace characters!");
 
         if (creditCardNr == null || creditCardNr.trim().length() == 0
                 || creditCardNr.matches(".*[\r\n\t]+.*")) {
             throwInvalidCreditCard("Credit Card number given is null, empty "
-                + "or contains whitespace characters!");
+                    + "or contains whitespace characters!");
         }
 
         CreditCardClient ccClient;
-        
         try {
             ccClient = new CreditCardClient(CREDIT_CARD_WS_URL);
         } catch (CreditCardClientException e) {
@@ -208,47 +211,48 @@ public class MediatorPortImpl implements MediatorPortType {
         if (cv.getItems().isEmpty())
             throwEmptyCart("Cart with the given ID is empty!");
 
-        synchronized (this) {
-            ShoppingResultView srv = new ShoppingResultView();
+        ShoppingResultView srv = new ShoppingResultView();
+        for (CartItemView civ : cv.getItems()) {
+            String sid = civ.getItem().getItemId().getSupplierId();
 
-            for (CartItemView civ : cv.getItems()) {
-                String sid = civ.getItem().getItemId().getSupplierId();
+            try {
+                String pid = civ.getItem().getItemId().getProductId();
+                SupplierClient supplier =
+                        new SupplierClient(endpointManager.getUddiURL(), sid);
 
                 try {
-                    String pid = civ.getItem().getItemId().getProductId();
                     int quantity = civ.getQuantity();
-                    SupplierClient supplier =
-                            new SupplierClient(endpointManager.getUddiURL(), sid);
+                    int price = civ.getItem().getPrice();
 
-                    try {
-                        supplier.buyProduct(pid, quantity);
-                        srv.getPurchasedItems().add(civ);
-                        srv.totalPrice += civ.getQuantity()
-                                * civ.getItem().getPrice();
-                    } catch (BadProductId_Exception
-                            | InsufficientQuantity_Exception
-                            | BadQuantity_Exception e) {
-                        System.err.println("Could not buy product: "
-                                + e.getMessage());
-                        srv.getDroppedItems().add(civ);
-                    }
-                } catch (SupplierClientException e) {
-                    System.err.println("Couldn't find supplier: "
+                    supplier.buyProduct(pid, quantity);
+                    srv.getPurchasedItems().add(civ);
+
+                    srv.totalPrice += quantity * price;
+                } catch (BadProductId_Exception
+                        | InsufficientQuantity_Exception
+                        | BadQuantity_Exception e) {
+                    System.err.println("Could not buy product: "
                             + e.getMessage());
                     srv.getDroppedItems().add(civ);
                 }
+            } catch (SupplierClientException e) {
+                System.err.println("Couldn't find supplier: "
+                        + e.getMessage());
+                srv.getDroppedItems().add(civ);
             }
+        }
 
-            if (!srv.getPurchasedItems().isEmpty()) {
-                if (srv.getDroppedItems().isEmpty()) {
-                    srv.setResult(Result.COMPLETE);
-                } else {
-                    srv.setResult(Result.PARTIAL);
-                }
+        if (!srv.getPurchasedItems().isEmpty()) {
+            if (srv.getDroppedItems().isEmpty()) {
+                srv.setResult(Result.COMPLETE);
             } else {
-                srv.setResult(Result.EMPTY);
+                srv.setResult(Result.PARTIAL);
             }
+        } else {
+            srv.setResult(Result.EMPTY);
+        }
 
+        synchronized (this) {
             LocalDateTime datetime = LocalDateTime.now();
             String srvId = "SR#"
                     + String.format("%010d", shoppingHistory.size())
@@ -257,9 +261,10 @@ public class MediatorPortImpl implements MediatorPortType {
             srv.setId(srvId);
 
             shoppingHistory.put(datetime, srv);
-
-            return srv;
         }
+
+        carts.remove(cartId);
+        return srv;
     }
 
     @Override
@@ -303,9 +308,9 @@ public class MediatorPortImpl implements MediatorPortType {
             synchronized (this) {
                 pv = supplier.getProduct(productId);
             }
-            
+
         } catch (SupplierClientException e) {
-        	System.err.println("Couldn't find supplier: "
+            System.err.println("Couldn't find supplier: "
                     + e.getMessage());
             return;
         } catch (BadProductId_Exception e) {
@@ -332,9 +337,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
             cv.getItems().add(civ);
 
-            synchronized (this) {
-                carts.put(cartId, cv);
-            }
+            carts.put(cartId, cv);
         }
 
     }
@@ -437,7 +440,7 @@ public class MediatorPortImpl implements MediatorPortType {
         faultInfo.message = message;
         throw new NotEnoughItems_Exception(message, faultInfo);
     }
-    
+
 
     /**
      * UDDI supplier lookup
@@ -471,7 +474,7 @@ public class MediatorPortImpl implements MediatorPortType {
                         suppliers.add(temp);
 
                 } catch (SupplierClientException sce) {
-                	System.err.println("Couldn't find supplier: "
+                    System.err.println("Couldn't find supplier: "
                             + sce.getMessage());
                 }
             }
