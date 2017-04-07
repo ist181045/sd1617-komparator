@@ -105,7 +105,7 @@ public class SupplierPortImpl implements SupplierPortType {
 		if (name == null || name.trim().length() == 0)
 			name = "friend";
 
-		String wsName = "Supplier";
+		String wsName = endpointManager.getWsName();
 
 		StringBuilder builder = new StringBuilder();
 		builder.append("Hello ").append(name);

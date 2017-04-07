@@ -23,6 +23,9 @@
         <mainclass>org.komparator.supplier.ws.cli.SupplierClientApp</mainclass>
 
         <ws.url>http://localhost:8081/supplier-ws/endpoint</ws.url>
+        <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
+        <ws.name>A58_Supplier</ws.name>
+        
     </properties>
 
     <dependencies>
@@ -32,6 +35,7 @@
             <artifactId>jaxws-rt</artifactId>
             <version>2.2.10</version>
         </dependency>
+        
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
@@ -39,6 +43,13 @@
             <version>4.12</version>
             <scope>test</scope>
         </dependency>
+        
+        <!-- UDDI Naming -->
+	    <dependency>
+	        <groupId>pt.ulisboa.tecnico.sdis</groupId>
+	        <artifactId>uddi-naming</artifactId>
+	        <version>1.2</version>
+	    </dependency>
     </dependencies>
 
     <build>

@@ -8,13 +8,23 @@ public class SupplierApp {
 		// Check arguments
 		if (args.length < 1) {
 			System.err.println("Argument(s) missing!");
-			System.err.println("Usage: java " + SupplierApp.class.getName() + " wsURL");
+			System.err.println("Usage: java " + SupplierApp.class.getName() + " wsURL OR wsURL wsName uddiURL");
 			return;
 		}
 		String wsURL = args[0];
-
-		// Create server implementation object
-		SupplierEndpointManager endpoint = new SupplierEndpointManager(wsURL);
+		
+		SupplierEndpointManager endpoint = null;
+		
+		if(args.length == 1) {
+			endpoint = new SupplierEndpointManager(wsURL);
+		}
+		else if(args.length == 3) {
+			String wsName = args[1];
+			String uddiURL = args[2];
+			endpoint = new SupplierEndpointManager(wsURL, wsName, uddiURL);
+		}
+		
+		
 		try {
 			endpoint.start();
 			endpoint.awaitConnections();
