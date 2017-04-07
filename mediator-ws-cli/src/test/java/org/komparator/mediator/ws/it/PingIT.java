@@ -70,7 +70,7 @@ public class PingIT extends BaseIT {
 
         for (String s : responseArr) {
             // see MediatorPortImpl#ping(java.lang.String)
-            assertTrue(s.startsWith("Response from"));
+            assertTrue(s.startsWith("Response from A58_Supplier"));
             // see SupplierPortImpl#ping(java.lang.String)
             assertTrue(s.endsWith("Hello test from Supplier"));
         }
