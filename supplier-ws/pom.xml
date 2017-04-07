@@ -27,7 +27,7 @@
 	    
 	    <ws.name>A58_Supplier${ws.i}</ws.name>
 	    
-	    <uddi.url>http://localhost:9090</uddi.url>
+	    <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
 	    
     </properties>
 
