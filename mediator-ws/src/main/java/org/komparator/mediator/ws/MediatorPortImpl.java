@@ -210,22 +210,17 @@ public class MediatorPortImpl implements MediatorPortType {
         if (cv.getItems().isEmpty())
             throwEmptyCart("Cart with the given ID is empty!");
 
-        List<SupplierClient> suppliers;
-        try {
-            suppliers = supplierLookup();
-        } catch (MediatorException | SupplierClientException e) {
-            e.printStackTrace();
-            return null;
-        }
+        synchronized (this) {
+            ShoppingResultView srv = new ShoppingResultView();
 
-        ShoppingResultView srv = new ShoppingResultView();
-        for (CartItemView civ : cv.getItems()) {
-            String sid = civ.getItem().getItemId().getSupplierId();
+            for (CartItemView civ : cv.getItems()) {
+                String sid = civ.getItem().getItemId().getSupplierId();
 
-            for (SupplierClient supplier : suppliers) {
-                if (sid.equals(supplier.getWsName())) {
+                try {
                     String pid = civ.getItem().getItemId().getProductId();
                     int quantity = civ.getQuantity();
+                    SupplierClient supplier =
+                            new SupplierClient(endpointManager.getUddiURL(), sid);
 
                     try {
                         supplier.buyProduct(pid, quantity);
@@ -233,35 +228,38 @@ public class MediatorPortImpl implements MediatorPortType {
                     } catch (BadProductId_Exception
                             | InsufficientQuantity_Exception
                             | BadQuantity_Exception e) {
-                        System.err.println("Could not buy product: " + e.getMessage());
+                        System.err.println("Could not buy product: "
+                                + e.getMessage());
                         srv.getDroppedItems().add(civ);
                     }
-
-                    break;
+                } catch (SupplierClientException e) {
+                    System.err.println("Couldn't find supplier: "
+                            + e.getMessage());
+                    srv.getDroppedItems().add(civ);
                 }
             }
-        }
 
-        if (!srv.getPurchasedItems().isEmpty()) {
-            if (srv.getDroppedItems().isEmpty()) {
-                srv.setResult(Result.COMPLETE);
+            if (!srv.getPurchasedItems().isEmpty()) {
+                if (srv.getDroppedItems().isEmpty()) {
+                    srv.setResult(Result.COMPLETE);
+                } else {
+                    srv.setResult(Result.PARTIAL);
+                }
             } else {
-                srv.setResult(Result.PARTIAL);
+                srv.setResult(Result.EMPTY);
             }
-        } else {
-            srv.setResult(Result.EMPTY);
+
+            LocalDateTime datetime = LocalDateTime.now();
+            String srvId = "SR#"
+                    + String.format("%010d", shoppingHistory.size())
+                    + "@" + datetime; // SR#xxxxxxxxxx@yyyy-mm-ddThh:mm:ss.nnn
+
+            srv.setId(srvId);
+
+            shoppingHistory.put(datetime, srv);
+
+            return srv;
         }
-
-        LocalDateTime datetime = LocalDateTime.now();
-        String srvId = "SR#"
-                + String.format("%010d", shoppingHistory.size())
-                + "@" + datetime; // SR#xxxxxxxxxx@YYYY-MM-DDTHH:MM:SS.mmm
-
-        srv.setId(srvId);
-
-        shoppingHistory.put(datetime, srv);
-
-        return srv;
     }
 
     @Override
