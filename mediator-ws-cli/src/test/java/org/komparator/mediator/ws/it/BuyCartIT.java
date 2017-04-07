@@ -24,6 +24,8 @@ import org.komparator.mediator.ws.Result;
 import org.komparator.mediator.ws.ShoppingResultView;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadProduct_Exception;
+import org.komparator.supplier.ws.BadQuantity_Exception;
+import org.komparator.supplier.ws.InsufficientQuantity_Exception;
 import org.komparator.supplier.ws.ProductView;
 import org.komparator.supplier.ws.cli.SupplierClient;
 import org.komparator.supplier.ws.cli.SupplierClientException;
@@ -99,23 +101,21 @@ public class BuyCartIT extends BaseIT {
     @Test
     public void successFullPurchase() {
         try {
-            mediatorClient.addToCart(CART_ID,
-                    newItemIdView(SC1_P1_ID, sc1.getWsName()), SC1_P1_QUANTITY);
+            String sid1 = sc1.getWsName();
+            String sid2 = sc2.getWsName();
 
             mediatorClient.addToCart(CART_ID,
-                    newItemIdView(SC1_P2_ID, sc1.getWsName()), SC1_P2_QUANTITY);
+                    newItemIdView(SC1_P1_ID, sid1), SC1_P1_QUANTITY);
 
             mediatorClient.addToCart(CART_ID,
-                    newItemIdView(SC1_P3_ID, sc1.getWsName()), SC1_P3_QUANTITY);
+                    newItemIdView(SC1_P2_ID, sid1), SC1_P2_QUANTITY);
 
             mediatorClient.addToCart(CART_ID,
-                    newItemIdView(SC2_P1_ID, sc2.getWsName()), SC2_P1_QUANTITY);
-        } catch (InvalidCartId_Exception | InvalidItemId_Exception |
-                NotEnoughItems_Exception | InvalidQuantity_Exception e) {
-            fail(e.getMessage());
-        }
+                    newItemIdView(SC1_P3_ID, sid1), SC1_P3_QUANTITY);
 
-        try {
+            mediatorClient.addToCart(CART_ID,
+                    newItemIdView(SC2_P1_ID, sid2), SC2_P1_QUANTITY);
+
             ShoppingResultView srv = mediatorClient.buyCart(CART_ID, CC_NUMBER);
 
             assertNotNull(srv);
@@ -137,28 +137,67 @@ public class BuyCartIT extends BaseIT {
                 String pid = civ.getItem().getItemId().getProductId();
                 String sid = civ.getItem().getItemId().getSupplierId();
 
-                if (sid.equals(sc1.getWsName()))
+                if (sid.equals(sid1))
                     assertEquals(0, sc1.getProduct(pid).getQuantity());
-                else if (sid.equals(sc2.getWsName()))
+                else if (sid.equals(sid2))
                     assertEquals(0, sc2.getProduct(pid).getQuantity());
 
 
             }
-        } catch (EmptyCart_Exception | InvalidCartId_Exception |
-                InvalidCreditCard_Exception | BadProductId_Exception e) {
+        } catch (Exception e) {
             fail(e.getMessage());
         }
     }
 
+    @Test
+    public void emptyPurchase() {
+        try {
+            mediatorClient.addToCart(CART_ID,
+                    newItemIdView(SC1_P1_ID, sc1.getWsName()), SC1_P1_QUANTITY);
+
+            sc1.buyProduct(SC1_P1_ID, 1);
+
+            ShoppingResultView srv = mediatorClient.buyCart(CART_ID, CC_NUMBER);
+
+            assertNotNull(srv);
+
+            assertEquals(Result.EMPTY, srv.getResult());
+            assertEquals(0, srv.getPurchasedItems().size());
+            assertEquals(1, srv.getDroppedItems().size());
+            assertEquals(0, srv.getTotalPrice());
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+    }
+
+    @Test
+    public void partialPurchase() {
+        try {
+            mediatorClient.addToCart(CART_ID,
+                    newItemIdView(SC1_P1_ID, sc1.getWsName()), SC1_P1_QUANTITY);
+
+            mediatorClient.addToCart(CART_ID,
+                    newItemIdView(SC1_P2_ID, sc1.getWsName()), SC1_P2_QUANTITY);
+
+            sc1.buyProduct(SC1_P2_ID, 1);
+
+            ShoppingResultView srv = mediatorClient.buyCart(CART_ID, CC_NUMBER);
+
+            assertNotNull(srv);
+
+            assertEquals(Result.PARTIAL, srv.getResult());
+            assertEquals(1, srv.getPurchasedItems().size());
+            assertEquals(1, srv.getDroppedItems().size());
+            assertEquals(SC1_P1_PRICE * SC1_P1_QUANTITY, srv.getTotalPrice());
+        } catch (Exception e) {
+            fail(e.getMessage());
+        }
+
+    }
 
     @After
     public void tearDown() {
         mediatorClient.clear();
-    }
-
-    @AfterClass
-    public static void cleanup() {
-        BaseIT.cleanup();
     }
 
     /* Helper methods */

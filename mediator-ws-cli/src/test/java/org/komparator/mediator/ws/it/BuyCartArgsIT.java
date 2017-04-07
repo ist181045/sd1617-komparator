@@ -58,7 +58,6 @@ public class BuyCartArgsIT extends BaseIT {
     public void testArgs() throws InvalidCreditCard_Exception,
             EmptyCart_Exception, InvalidCartId_Exception {
         expectedException.expect(exception);
-
         mediatorClient.buyCart(cartId, creditCardNr);
     }
 }
