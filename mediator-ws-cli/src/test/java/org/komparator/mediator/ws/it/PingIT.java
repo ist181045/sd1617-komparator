@@ -1,10 +1,10 @@
 package org.komparator.mediator.ws.it;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
 
 
 /**
@@ -66,13 +66,13 @@ public class PingIT extends BaseIT {
     public void pingAssertResponse() {
         // Thank you white-box testing (2 suppliers running)
         String response = mediatorClient.ping("test");
-        String[] responseArr = response.split(System.lineSeparator());
+        String[] responses = response.split(System.lineSeparator());
 
-        for (String s : responseArr) {
-            // see MediatorPortImpl#ping(java.lang.String)
-            assertTrue(s.startsWith("Response from A58_Supplier"));
-            // see SupplierPortImpl#ping(java.lang.String)
-            assertTrue(s.endsWith("Hello test from Supplier"));
+        for (String res : responses) {
+            assertNotNull(res);
+
+            assertTrue(res.startsWith("Response from "));
+            assertTrue(res.contains("test"));
         }
     }
 }
