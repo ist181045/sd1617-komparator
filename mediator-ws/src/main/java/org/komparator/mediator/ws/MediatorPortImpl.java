@@ -253,9 +253,11 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         LocalDateTime datetime = LocalDateTime.now();
-        StringBuilder srvId = new StringBuilder("SR#");
-        srvId.append(String.format("%010d", shoppingHistory.size()));
-        srvId.append("@").append(datetime);
+        String srvId = "SR#"
+                + String.format("%010d", shoppingHistory.size())
+                + "@" + datetime; // SR#xxxxxxxxxx@YYYY-MM-DDTHH:MM:SS.mmm
+
+        srv.setId(srvId);
 
         shoppingHistory.put(datetime, srv);
 
