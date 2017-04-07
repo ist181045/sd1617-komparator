@@ -184,12 +184,6 @@ public class MediatorPortImpl implements MediatorPortType {
                 + "or contains whitespace characters!");
         }
 
-        try {
-            Integer.parseInt(creditCardNr.trim());
-        } catch (NumberFormatException nfe) {
-            throwInvalidCreditCard("Credit Card number given is not a number!");
-        }
-
         CreditCardClient ccClient;
         try {
             ccClient = new CreditCardClient(CREDIT_CARD_WS_URL);

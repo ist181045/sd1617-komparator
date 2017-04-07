@@ -2,7 +2,6 @@ package org.komparator.mediator.ws.it;
 
 import java.util.Arrays;
 
-import org.junit.AfterClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -36,23 +35,22 @@ public class BuyCartArgsIT extends BaseIT {
     @Parameters
     public static Iterable<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {null,           CC_NUMBER, InvalidCartId_Exception.class},
-                {"",             CC_NUMBER, InvalidCartId_Exception.class},
-                {"  ",           CC_NUMBER, InvalidCartId_Exception.class},
-                {"\n",           CC_NUMBER, InvalidCartId_Exception.class},
-                {"\t",           CC_NUMBER, InvalidCartId_Exception.class},
-                {"\r",           CC_NUMBER, InvalidCartId_Exception.class},
-                {"abc\r\n\tabc", CC_NUMBER, InvalidCartId_Exception.class},
+                { null,           CC_NUMBER, InvalidCartId_Exception.class },
+                { "",             CC_NUMBER, InvalidCartId_Exception.class },
+                { "  ",           CC_NUMBER, InvalidCartId_Exception.class },
+                { "\n",           CC_NUMBER, InvalidCartId_Exception.class },
+                { "\t",           CC_NUMBER, InvalidCartId_Exception.class },
+                { "\r",           CC_NUMBER, InvalidCartId_Exception.class },
+                { "abc\r\n\tabc", CC_NUMBER, InvalidCartId_Exception.class },
 
-                {CART_ID,           null, InvalidCreditCard_Exception.class},
-                {CART_ID,             "", InvalidCreditCard_Exception.class},
-                {CART_ID,           "  ", InvalidCreditCard_Exception.class},
-                {CART_ID,           "\n", InvalidCreditCard_Exception.class},
-                {CART_ID,           "\t", InvalidCreditCard_Exception.class},
-                {CART_ID,           "\r", InvalidCreditCard_Exception.class},
-                {CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class},
-                {CART_ID, "1234abcd9012", InvalidCreditCard_Exception.class},
-                {CART_ID, "123456789012", InvalidCreditCard_Exception.class}
+                { CART_ID,           null, InvalidCreditCard_Exception.class },
+                { CART_ID,             "", InvalidCreditCard_Exception.class },
+                { CART_ID,           "  ", InvalidCreditCard_Exception.class },
+                { CART_ID,           "\n", InvalidCreditCard_Exception.class },
+                { CART_ID,           "\t", InvalidCreditCard_Exception.class },
+                { CART_ID,           "\r", InvalidCreditCard_Exception.class },
+                { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class },
+                { CART_ID, "123456789012", InvalidCreditCard_Exception.class }
         });
     }
 
