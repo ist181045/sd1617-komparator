@@ -228,15 +228,15 @@ public class MediatorPortImpl implements MediatorPortType {
                     srv.getPurchasedItems().add(civ);
 
                     srv.totalPrice += quantity * price;
-                } catch (BadProductId_Exception
-                        | InsufficientQuantity_Exception
-                        | BadQuantity_Exception e) {
-                    System.err.println("Could not buy product: "
+                } catch (BadProductId_Exception |
+                        InsufficientQuantity_Exception |
+                        BadQuantity_Exception e) {
+                    System.err.println("Could not buy product (" + pid + "): "
                             + e.getMessage());
                     srv.getDroppedItems().add(civ);
                 }
             } catch (SupplierClientException e) {
-                System.err.println("Couldn't find supplier: "
+                System.err.println("Couldn't find supplier (" + sid + "): "
                         + e.getMessage());
                 srv.getDroppedItems().add(civ);
             }
