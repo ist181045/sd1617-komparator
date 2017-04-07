@@ -16,7 +16,7 @@ import org.komparator.mediator.ws.InvalidCartId_Exception;
 import org.komparator.mediator.ws.InvalidCreditCard_Exception;
 
 @RunWith(Parameterized.class)
-public class BuyCartIT extends BaseIT {
+public class BuyCartArgsIT extends BaseIT {
 
     private static final String CC_NUMBER = "4012888888881881";
     private static final String CART_ID = "CID#000@2017-04-07T11:39:50.231";
