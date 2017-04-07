@@ -3,7 +3,6 @@ package org.komparator.mediator.ws;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -67,10 +66,11 @@ public class MediatorPortImpl implements MediatorPortType {
         List<SupplierClient> suppliers;
         try {
             suppliers = supplierLookup();
-        } catch (MediatorException | SupplierClientException e) {
-            e.printStackTrace();
-            return;
-        }
+        } catch (MediatorException me) {
+        	System.err.println("Mediator lookup failed: "
+                    + me.getMessage());
+        	return;
+    	}
 
         for (SupplierClient supplier : suppliers) {
             supplier.clear();
@@ -93,15 +93,14 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidItemId("Product ID cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
+        
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
-            me.printStackTrace();
-            return null;
-        } catch (SupplierClientException sce) {
-            sce.printStackTrace();
-            return null;
-        }
+        	System.err.println("Mediator lookup failed: "
+                    + me.getMessage());
+        	return null;
+    	} 
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
 
@@ -111,7 +110,8 @@ public class MediatorPortImpl implements MediatorPortType {
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
-                    e.printStackTrace();
+                	System.err.println("Could not get product: "
+                            + e.getMessage());
                     return null;
                 }
 
@@ -119,7 +119,7 @@ public class MediatorPortImpl implements MediatorPortType {
                     products.add(newItemView(productview, supplier.getWsName()));
                 }
             }
-        }
+        } 
 
         return new ArrayList<>(products);
     }
@@ -139,12 +139,14 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidText("Product description cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
+        
         try {
             suppliers = supplierLookup();
-        } catch (MediatorException | SupplierClientException e) {
-            e.printStackTrace();
-            return null;
-        }
+        } catch (MediatorException me) {
+        	System.err.println("Mediator lookup failed: "
+                    + me.getMessage());
+        	return null;
+    	} 
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
 
@@ -166,7 +168,6 @@ public class MediatorPortImpl implements MediatorPortType {
             }
         }
 
-
         return new ArrayList<>(products);
 
     }
@@ -174,6 +175,7 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception, InvalidCreditCard_Exception {
+    	
         if (cartId == null || cartId.trim().length() == 0
                 || cartId.matches(".*[\r\n\t]+.*"))
             throwInvalidCartId("Cart ID given is null, empty or contains "
@@ -186,6 +188,7 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         CreditCardClient ccClient;
+        
         try {
             ccClient = new CreditCardClient(CREDIT_CARD_WS_URL);
         } catch (CreditCardClientException e) {
@@ -300,9 +303,10 @@ public class MediatorPortImpl implements MediatorPortType {
             synchronized (this) {
                 pv = supplier.getProduct(productId);
             }
+            
         } catch (SupplierClientException e) {
-            System.err.println("Supplier Connection Error");
-            e.printStackTrace();
+        	System.err.println("Couldn't find supplier: "
+                    + e.getMessage());
             return;
         } catch (BadProductId_Exception e) {
             throwInvalidItemId("Product ID exception on Supplier");
@@ -346,8 +350,8 @@ public class MediatorPortImpl implements MediatorPortType {
         List<SupplierClient> suppliers;
         try {
             suppliers = supplierLookup();
-        } catch (MediatorException | SupplierClientException e) {
-            return "Error occurred: " + e.getMessage();
+        } catch (MediatorException me) {
+            return "Error occurred: " + me.getMessage();
         }
 
         if (suppliers != null) {
@@ -433,12 +437,12 @@ public class MediatorPortImpl implements MediatorPortType {
         faultInfo.message = message;
         throw new NotEnoughItems_Exception(message, faultInfo);
     }
+    
 
     /**
      * UDDI supplier lookup
      */
-    private List<SupplierClient> supplierLookup() throws MediatorException,
-            SupplierClientException {
+    private List<SupplierClient> supplierLookup() throws MediatorException {
         Collection<UDDIRecord> uddiRecords;
         String uddiURL = endpointManager.getUddiURL();
 
@@ -467,7 +471,8 @@ public class MediatorPortImpl implements MediatorPortType {
                         suppliers.add(temp);
 
                 } catch (SupplierClientException sce) {
-                    sce.printStackTrace();
+                	System.err.println("Couldn't find supplier: "
+                            + sce.getMessage());
                 }
             }
 
