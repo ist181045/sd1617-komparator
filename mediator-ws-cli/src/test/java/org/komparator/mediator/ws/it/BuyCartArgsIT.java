@@ -21,18 +21,18 @@ public class BuyCartArgsIT extends BaseIT {
     private static final String CART_ID = "CID#000@2017-04-07T11:39:50.231";
 
     @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+    public ExpectedException thrown = ExpectedException.none();
 
-    @Parameter
+    @Parameter(0)
     public String cartId;
 
-    @Parameter(value = 1)
+    @Parameter(1)
     public String creditCardNr;
 
-    @Parameter(value = 2)
+    @Parameter(2)
     public Class<Throwable> exception;
 
-    @Parameters
+    @Parameters(name = "cartId={0},creditCardNr={1}")
     public static Iterable<Object[]> data() {
         return Arrays.asList(new Object[][] {
             { null,           CC_NUMBER, InvalidCartId_Exception.class },
@@ -52,14 +52,14 @@ public class BuyCartArgsIT extends BaseIT {
             { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class },
             { CART_ID, "123456789012", InvalidCreditCard_Exception.class },
 
-            { CART_ID,      CC_NUMBER, InvalidCartId_Exception.class } /* Doesn't exist*/
+            { CART_ID,      CC_NUMBER, InvalidCartId_Exception.class }
         });
     }
 
     @Test
     public void testArgs() throws InvalidCreditCard_Exception,
             EmptyCart_Exception, InvalidCartId_Exception {
-        expectedException.expect(exception);
+        thrown.expect(exception);
         mediatorClient.buyCart(cartId, creditCardNr);
     }
 }
