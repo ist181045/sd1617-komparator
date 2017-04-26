@@ -19,12 +19,12 @@
 
         <!-- WSDL is required for client code generation -->
         <ws.url>http://sec.sd.rnl.tecnico.ulisboa.pt:8081/ca</ws.url>
-        <wsdl.url>${ws.url}?WSDL</wsdl.url>
-    	    
-		<mainclass>pt.ulisboa.tecnico.sdis.ws.cli.CAClientApp</mainclass>
-
         <ws.name>CA</ws.name>
-        <uddi.url>http://localhost:9090</uddi.url>
+
+        <mainclass>pt.ulisboa.tecnico.sdis.ws.cli.CAClientApp</mainclass>
+
+        <wsdl.url>${ws.url}?WSDL</wsdl.url>
+        <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090/</uddi.url>
     </properties>
 
     <dependencies>
