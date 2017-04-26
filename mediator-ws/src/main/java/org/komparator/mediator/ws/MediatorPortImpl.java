@@ -110,7 +110,7 @@ public class MediatorPortImpl implements MediatorPortType {
 
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
-                ProductView productview = null;
+                ProductView productview;
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
@@ -119,7 +119,9 @@ public class MediatorPortImpl implements MediatorPortType {
                     return null;
                 }
 
-                if (productview != null) {
+                if (productview == null) {
+                    throwInvalidItemId("Couldn't find product (" + productId + ")");
+                } else {
                     products.add(newItemView(productview, supplier.getWsName()));
                 }
             }
@@ -178,7 +180,8 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
-            throws EmptyCart_Exception, InvalidCartId_Exception, InvalidCreditCard_Exception {
+            throws EmptyCart_Exception, InvalidCartId_Exception,
+            InvalidCreditCard_Exception {
 
         if (cartId == null || cartId.trim().length() == 0
                 || cartId.matches(".*[\r\n\t]+.*"))
@@ -256,7 +259,7 @@ public class MediatorPortImpl implements MediatorPortType {
             LocalDateTime datetime = LocalDateTime.now();
             String srvId = "SR#"
                     + String.format("%010d", shoppingHistory.size())
-                    + "@" + datetime; // SR#xxxxxxxxxx@yyyy-mm-ddThh:mm:ss.nnn
+                    + "@" + datetime;
 
             srv.setId(srvId);
 
@@ -302,7 +305,7 @@ public class MediatorPortImpl implements MediatorPortType {
         if (itemQty <= 0)
             throwInvalidQuantity("Quantity cannot be 0 or negative!");
 
-        ProductView pv = null;
+        ProductView pv;
         try {
             SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
             synchronized (this) {
@@ -317,24 +320,24 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidItemId("Product ID exception on Supplier");
             return;
         }
-        if (pv != null) {
+        if (pv == null) {
+            throwInvalidItemId("Couldn't find product (" + productId + "): ");
+        } else {
             if (pv.getQuantity() < itemQty) {
                 throwNotEnoughItems("Quantity not available in supplier");
             }
+
             CartView cv = carts.get(cartId);
             if (cv == null) {
                 cv = new CartView();
                 cv.setCartId(cartId);
             }
 
-
             ItemView iv = newItemView(pv, supplierId);
             CartItemView civ = new CartItemView();
 
             civ.setItem(iv);
             civ.setQuantity(itemQty);
-
-
             cv.getItems().add(civ);
 
             carts.put(cartId, cv);
@@ -408,34 +411,36 @@ public class MediatorPortImpl implements MediatorPortType {
         throw new InvalidCreditCard_Exception(message, faultInfo);
     }
 
-    /**
-     * Helper method to throw new InvalidText exception
-     */
-    private void throwInvalidText(final String message) throws InvalidText_Exception {
+    private void throwInvalidText(final String message)
+            throws InvalidText_Exception {
         InvalidText faultInfo = new InvalidText();
         faultInfo.message = message;
         throw new InvalidText_Exception(message, faultInfo);
     }
 
-    private void throwInvalidCartId(final String message) throws InvalidCartId_Exception {
+    private void throwInvalidCartId(final String message)
+            throws InvalidCartId_Exception {
         InvalidCartId faultInfo = new InvalidCartId();
         faultInfo.message = message;
         throw new InvalidCartId_Exception(message, faultInfo);
     }
 
-    private void throwInvalidItemId(final String message) throws InvalidItemId_Exception {
+    private void throwInvalidItemId(final String message)
+            throws InvalidItemId_Exception {
         InvalidItemId faultInfo = new InvalidItemId();
         faultInfo.message = message;
         throw new InvalidItemId_Exception(message, faultInfo);
     }
 
-    private void throwInvalidQuantity(final String message) throws InvalidQuantity_Exception {
+    private void throwInvalidQuantity(final String message)
+            throws InvalidQuantity_Exception {
         InvalidQuantity faultInfo = new InvalidQuantity();
         faultInfo.message = message;
         throw new InvalidQuantity_Exception(message, faultInfo);
     }
 
-    private void throwNotEnoughItems(final String message) throws NotEnoughItems_Exception {
+    private void throwNotEnoughItems(final String message)
+            throws NotEnoughItems_Exception {
         NotEnoughItems faultInfo = new NotEnoughItems();
         faultInfo.message = message;
         throw new NotEnoughItems_Exception(message, faultInfo);
