@@ -32,27 +32,30 @@ public class BuyCartArgsIT extends BaseIT {
     @Parameter(2)
     public Class<Throwable> exception;
 
-    @Parameters(name = "cartId={0},creditCardNr={1}")
+    @Parameter(3) /* Unused */
+    public String testName;
+
+    @Parameters(name = "{3}")
     public static Iterable<Object[]> data() {
         return Arrays.asList(new Object[][] {
-            { null,           CC_NUMBER, InvalidCartId_Exception.class },
-            { "",             CC_NUMBER, InvalidCartId_Exception.class },
-            { "  ",           CC_NUMBER, InvalidCartId_Exception.class },
-            { "\n",           CC_NUMBER, InvalidCartId_Exception.class },
-            { "\t",           CC_NUMBER, InvalidCartId_Exception.class },
-            { "\r",           CC_NUMBER, InvalidCartId_Exception.class },
-            { "abc\r\n\tabc", CC_NUMBER, InvalidCartId_Exception.class },
+            { null,           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Null"             },
+            { "",             CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Empty String"     },
+            { "  ",           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Spaces"           },
+            { "\n",           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Linefeed"         },
+            { "\t",           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Horizontal Tab"   },
+            { "\r",           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Carriage Return"  },
+            { "abc\r\n\tabc", CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Mixed Whitespace" },
 
-            { CART_ID,           null, InvalidCreditCard_Exception.class },
-            { CART_ID,             "", InvalidCreditCard_Exception.class },
-            { CART_ID,           "  ", InvalidCreditCard_Exception.class },
-            { CART_ID,           "\n", InvalidCreditCard_Exception.class },
-            { CART_ID,           "\t", InvalidCreditCard_Exception.class },
-            { CART_ID,           "\r", InvalidCreditCard_Exception.class },
-            { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class },
-            { CART_ID, "123456789012", InvalidCreditCard_Exception.class },
+            { CART_ID,           null, InvalidCreditCard_Exception.class, "CC Number: Null"             },
+            { CART_ID,             "", InvalidCreditCard_Exception.class, "CC Number: Empty String"     },
+            { CART_ID,           "  ", InvalidCreditCard_Exception.class, "CC Number: Spaces"           },
+            { CART_ID,           "\n", InvalidCreditCard_Exception.class, "CC Number: Linefeed"         },
+            { CART_ID,           "\t", InvalidCreditCard_Exception.class, "CC Number: Horizontal Tab"   },
+            { CART_ID,           "\r", InvalidCreditCard_Exception.class, "CC Number: Carriage Return"  },
+            { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class, "CC Number: Mixed Whitespace" },
+            { CART_ID, "123456789012", InvalidCreditCard_Exception.class, "CC Number: Invalid Number"   },
 
-            { CART_ID,      CC_NUMBER, InvalidCartId_Exception.class }
+            { CART_ID,      CC_NUMBER, InvalidCartId_Exception.class, "Cart: Doesnt Exist" }
         });
     }
 
