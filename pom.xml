@@ -9,9 +9,9 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>security</module>
         <module>ca-ws-cli</module>
         <module>cc-ws-cli</module>
-        <module>security</module>
         <module>supplier-ws</module>
         <module>supplier-ws-cli</module>
         <module>mediator-ws</module>
