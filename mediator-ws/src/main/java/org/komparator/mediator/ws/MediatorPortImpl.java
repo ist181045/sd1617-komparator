@@ -162,7 +162,7 @@ public class MediatorPortImpl implements MediatorPortType {
                 try {
                     productViews = supplier.searchProducts(descText);
                 } catch (BadText_Exception e) {
-                    e.printStackTrace();
+                    throwInvalidText("Bad Product Description");
                 }
 
                 if (productViews != null) {
