@@ -24,7 +24,7 @@
 
         <ws.url>http://localhost:8081/supplier-ws/endpoint</ws.url>
         <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
-        <ws.name>A58_Supplier</ws.name>
+        <ws.name>A58_Supplier1</ws.name>
         
     </properties>
 
@@ -132,7 +132,8 @@
                     <killAfter>-1</killAfter>
                     <mainClass>${mainclass}</mainClass>
                     <arguments>
-                        <argument>${ws.url}</argument>
+                        <argument>${uddi.url}</argument>
+                        <argument>${ws.name}</argument>
                     </arguments>
                 </configuration>
             </plugin>
