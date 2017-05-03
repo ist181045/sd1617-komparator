@@ -11,6 +11,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.jws.HandlerChain;
 import javax.jws.WebService;
 
 import org.komparator.supplier.ws.BadProductId_Exception;
@@ -35,6 +36,7 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
         targetNamespace = "http://ws.mediator.komparator.org/",
         serviceName = "MediatorService"
 )
+@HandlerChain(file = "/mediator-ws_handler-chain.xml")
 public class MediatorPortImpl implements MediatorPortType {
 
     // ItemView comparator
