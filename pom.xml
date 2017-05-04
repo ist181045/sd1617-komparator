@@ -9,6 +9,8 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>cert-util</module>
+        <module>uddi-naming</module>
         <module>security</module>
         <module>ca-ws-cli</module>
         <module>cc-ws-cli</module>
