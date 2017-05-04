@@ -3,8 +3,6 @@ package org.komparator.security;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -15,14 +13,12 @@ public class CryptoUtil {
     private static final String RSA_PKCS1_TRANSFORMATION =
             "RSA/ECB/PKCS1Padding";
 
-    public static byte[] asymCipher(PrivateKey privateKey, byte[] plainBytes) {
-        return doRSACipher(Cipher.ENCRYPT_MODE, privateKey, plainBytes);
+    public static byte[] asymCipher(Key key, byte[] plainBytes) {
+        return doRSACipher(Cipher.ENCRYPT_MODE, key, plainBytes);
     }
 
-    public static byte[] asymDecipher(PublicKey publicKey,
-            byte[] encryptedBytes) {
-        return doRSACipher(Cipher.DECRYPT_MODE, publicKey,
-                encryptedBytes);
+    public static byte[] asymDecipher(Key key, byte[] encryptedBytes) {
+        return doRSACipher(Cipher.DECRYPT_MODE, key, encryptedBytes);
     }
 
     private static byte[] doRSACipher(int opMode, Key key, byte[] bytes) {
