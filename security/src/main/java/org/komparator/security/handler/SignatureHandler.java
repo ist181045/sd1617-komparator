@@ -1,0 +1,222 @@
+package org.komparator.security.handler;
+
+import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.Iterator;
+import java.util.Set;
+
+import javax.xml.namespace.QName;
+import javax.xml.soap.Name;
+import javax.xml.soap.Node;
+import javax.xml.soap.SOAPElement;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
+import javax.xml.ws.handler.MessageContext;
+import javax.xml.ws.handler.soap.SOAPHandler;
+import javax.xml.ws.handler.soap.SOAPMessageContext;
+
+import pt.ulisboa.tecnico.sdis.cert.CertUtil;
+import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
+import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
+
+/**
+ * This SOAPHandler outputs the contents of inbound and outbound messages.
+ */
+public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
+
+	//
+	// Handler interface implementation
+	//
+	
+	private static final String KEYSTORE_PASSWORD = "M6cggAUT";
+	
+	private static final String CA_URL = "http://sec.sd.rnl.tecnico.ulisboa.pt:8081/ca";
+	
+	private static final String ENTITY_NAME = "entity_name";
+	private static final String ENTITY_PREFIX = "ent";
+	private static final String ENTITY_NAMESPACE = "ent:entity";
+	
+	private static final String SIGNATURE_NAME = "signature";
+	private static final String SIGNATURE_PREFIX = "sig";
+	private static final String SIGNATURE_NAMESPACE = "sig:signature";
+
+	/**
+	 * Gets the header blocks that can be processed by this Handler instance. If
+	 * null, processes all.
+	 */
+	@Override
+	public Set<QName> getHeaders() {
+		return null;
+	}
+
+	/**
+	 * The handleMessage method is invoked for normal processing of inbound and
+	 * outbound messages.
+	 */
+	@Override
+	public boolean handleMessage(SOAPMessageContext smc) {
+		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+		if(outbound)
+			addSignature(smc);
+		else
+			verifySignature(smc);
+		
+		return true;
+	}
+
+	/** The handleFault method is invoked for fault message processing. */
+	@Override
+	public boolean handleFault(SOAPMessageContext smc) {
+		//logToSystemOut(smc);
+		return true;
+	}
+
+	/**
+	 * Called at the conclusion of a message exchange pattern just prior to the
+	 * JAX-WS runtime dispatching a message, fault or exception.
+	 */
+	@Override
+	public void close(MessageContext messageContext) {
+		// nothing to clean up
+	}
+	
+	private void addSignature(SOAPMessageContext smc) {
+		
+		
+		try {
+			String entity = (String)smc.get("ws_name");
+			
+			if(entity == null)
+				entity = "A58_Mediator";
+			
+			SOAPMessage message = smc.getMessage();
+			SOAPPart part = message.getSOAPPart();
+			SOAPEnvelope envelope = part.getEnvelope();
+			SOAPHeader header = envelope.getHeader();
+			
+			if(header == null)
+				header = envelope.addHeader();
+			
+			Name name = envelope.createName(ENTITY_NAME, ENTITY_PREFIX, ENTITY_NAMESPACE);
+			
+			SOAPHeaderElement element = header.addHeaderElement(name);
+			
+			element.addTextNode(entity);
+			
+			System.out.println("Added entity name to SOAP header: " + entity);
+			
+			KeyStore keystore = CertUtil.readKeystoreFromResource(entity + ".jks", KEYSTORE_PASSWORD.toCharArray());
+			
+			PrivateKey key = CertUtil.getPrivateKeyFromKeyStore(entity.toLowerCase(), KEYSTORE_PASSWORD.toCharArray(), keystore);
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			message.writeTo(out);
+			byte[] bytes = parseBase64Binary(new String(out.toByteArray()));
+			
+			byte[] digest = CertUtil.makeDigitalSignature("SHA256WithRSA", key, bytes);
+			SOAPHeaderElement signature = header.addHeaderElement(envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE));;
+			
+			signature.addTextNode(printBase64Binary(digest));
+			
+		} catch (SOAPException se) {
+			System.out.println("deu merda boy");
+			se.printStackTrace();
+			
+			//TODO HANDLE THIS SHIT
+		} catch(IOException fnfe) {
+			System.out.println("IOException cenas");
+			fnfe.printStackTrace();
+		} catch (KeyStoreException kse) {
+			System.out.println("KeyStoreException cenas " + kse.getMessage());
+			kse.printStackTrace();
+		} catch (UnrecoverableKeyException uke) {
+			System.out.println("UnrecoverableKeyException cenas");
+			uke.printStackTrace();
+		}
+		
+	}
+	
+private void verifySignature(SOAPMessageContext smc) {
+		
+		
+		try {			
+			SOAPMessage message = smc.getMessage();
+			SOAPPart part = message.getSOAPPart();
+			SOAPEnvelope envelope = part.getEnvelope();
+			SOAPHeader header = envelope.getHeader();
+			
+			Name name = envelope.createName(ENTITY_NAME, ENTITY_PREFIX, ENTITY_NAMESPACE);
+			Iterator it = header.getChildElements(name);
+			
+			if(!it.hasNext())
+				System.out.println("merda max je suis placeholder");
+			
+			SOAPElement element = (SOAPElement) it.next();
+			String entity = element.getValue();
+			
+			CAClient ca = new CAClient(CA_URL);
+			
+			String cString = ca.getCertificate(entity);
+			
+			byte[] bytes = cString.getBytes(StandardCharsets.UTF_8);
+			InputStream in = new ByteArrayInputStream(bytes);
+			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			Certificate cert = certFactory.generateCertificate(in);
+			
+			
+			if(!CertUtil.verifySignedCertificate(cert, CertUtil.getX509CertificateFromResource("ca.cer")))
+				System.out.println("merda max je suis placeholder");
+			
+			name = envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE);
+			
+			it = header.getChildElements(name);
+			
+			if(!it.hasNext())
+				System.out.println("merda max je suis placeholder");
+			
+			element = (SOAPElement) header.removeChild((Node)it.next());
+			String signature = element.getValue();
+			
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			message.writeTo(out);
+			bytes = parseBase64Binary(new String(out.toByteArray()));
+			
+			if(!CertUtil.verifyDigitalSignature("SHA256WithRSA", cert, bytes, parseBase64Binary(signature)))
+				throw new RuntimeException("Signature was not correctly verified");
+			
+		} catch (SOAPException se) {
+			System.out.println("deu merda boy");
+			se.printStackTrace();
+			
+			//TODO HANDLE THIS SHIT
+		} catch(CertificateException ce) {
+			System.out.println("CertificateException cenas");
+			ce.printStackTrace();
+		} catch(IOException fnfe) {
+			System.out.println("IOException cenas");
+			fnfe.printStackTrace();
+		} catch(CAClientException cae) {
+			System.out.println("CAClientException cenas");
+			cae.printStackTrace();
+		}
+		
+	}
+
+}
