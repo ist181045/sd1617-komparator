@@ -43,6 +43,12 @@
 	        <artifactId>supplier-ws-cli</artifactId>
 	        <version>1.0-SNAPSHOT</version>
 	    </dependency>
+	    <!-- SECURITY -->
+        <dependency>
+	        <groupId>org.komparator.A58</groupId>
+	        <artifactId>security</artifactId>
+	        <version>1.0-SNAPSHOT</version>
+	    </dependency>
         <!-- CREDIT CARD CLIENT -->
         <dependency>
 	        <groupId>org.komparator.A58</groupId>

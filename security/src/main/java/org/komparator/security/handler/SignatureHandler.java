@@ -166,7 +166,11 @@ private void verifySignature(SOAPMessageContext smc) {
 			Iterator it = header.getChildElements(name);
 			
 			if(!it.hasNext())
-				System.out.println("merda max je suis placeholder");
+			{
+				String errorMessage = "Couldn't get Entity from header: ";
+				System.out.println(errorMessage);
+				throw new RuntimeException(errorMessage);
+			}
 			
 			SOAPElement element = (SOAPElement) it.next();
 			String entity = element.getValue();
@@ -182,14 +186,14 @@ private void verifySignature(SOAPMessageContext smc) {
 			
 			
 			if(!CertUtil.verifySignedCertificate(cert, CertUtil.getX509CertificateFromResource("ca.cer")))
-				System.out.println("merda max je suis placeholder");
+				System.out.println("merda max je suis placeholder2");
 			
 			name = envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE);
 			
 			it = header.getChildElements(name);
 			
 			if(!it.hasNext())
-				System.out.println("merda max je suis placeholder");
+				System.out.println("merda max je suis placeholder3");
 			
 			element = (SOAPElement) header.removeChild((Node)it.next());
 			String signature = element.getValue();

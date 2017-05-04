@@ -169,7 +169,7 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 				}
 			}
 			
-			System.out.printf("%nVerified timestamp %s%n%n");
+			System.out.printf("%nVerified timestamp %n%n");
 			
 		} catch (SOAPException se) {
 			{

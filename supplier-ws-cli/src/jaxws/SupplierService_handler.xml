@@ -10,6 +10,9 @@
         <!--handler>
             <handler-class>org.komparator.security.handler.test.TimestampHandlerTest</handler-class>
         </handler-->
+        <!-->handler>
+            <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
+        </handler-->
 		<handler>
             <handler-class>org.komparator.security.handler.SignatureHandler</handler-class>
         </handler>
