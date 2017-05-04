@@ -3,8 +3,15 @@
         <!--handler>
             <handler-class>example.ws.handler.MessageContextHandler</handler-class>
         </handler-->
+        <handler>
+            <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
+        </handler>
+        <handler>
+            <handler-class>org.komparator.security.handler.TimestampHandler</handler-class>
+        </handler>
+        <!-- Test TimestampHandler -->
         <!--handler>
-            <handler-class>example.ws.handler.HeaderHandler</handler-class>
+            <handler-class>org.komparator.security.handler.test.TimestampHandlerTest</handler-class>
         </handler-->
         <handler>
             <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
