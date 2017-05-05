@@ -8,16 +8,12 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
-import org.komparator.security.handler.TimestampHandler;
+import org.komparator.security.SecurityManager;
 
 /**
  * This SOAPHandler adds date and time to message header
  */
 public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
-	
-	private static final int TIMEOUT = TimestampHandler.TIMEOUT + 1;
-	
-	
 	
 	//
 	// Handler interface implementation
@@ -70,9 +66,9 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 			
 		try {
 			
-			System.out.println("Sleeping :" + TIMEOUT + " seconds");
+			System.out.println("Sleeping :" + (SecurityManager.getMaxTimeout() + 1) + " seconds");
 			
-			TimeUnit.SECONDS.sleep(TIMEOUT);
+			TimeUnit.SECONDS.sleep(SecurityManager.getMaxTimeout() + 1);
 			
 			System.out.println("Sleep time is over");
 			
@@ -81,7 +77,7 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 			{
 				String errorMessage = "Couldn't sleep: " + ie.getMessage();
 				System.out.println(errorMessage);
-				throw new RuntimeException(errorMessage);
+				return;
 			}
 		}	
 	}

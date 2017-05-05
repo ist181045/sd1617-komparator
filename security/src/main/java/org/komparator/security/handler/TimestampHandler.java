@@ -19,6 +19,8 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
+import org.komparator.security.SecurityManager;
+
 /**
  * This SOAPHandler adds date and time to message header
  */
@@ -30,8 +32,6 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 	private static final String NS_PREFIX = "fre";
 	private static final String TIMESTAMP_HEADER = "Timestamp";
 	private static final String TIMESTAMP_NS = "urn:fresh";
-	
-	public static final int 	TIMEOUT = 3;
 	
 	
 	//
@@ -165,19 +165,18 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 
 			long seconds = (new Date().getTime() - messageTimestamp.getTime())/1000;
 			
-			if (seconds < 0 || seconds > TIMEOUT ){
+			if (seconds < 0 || seconds > SecurityManager.getMaxTimeout() ){
 				{
-					String errorMessage = "Message time invalid ";
+					String errorMessage = "Message time invalid";
 					System.out.println(errorMessage);
 					throw new RuntimeException(errorMessage);
 				}
 			}
 			
 			System.out.printf("%nVerified timestamp %n%n");
-			
 		} catch (SOAPException se) {
 			{
-				String errorMessage = "Couldn't get date to message: " + se.getMessage();
+				String errorMessage = "Couldn't get date from message: " + se.getMessage();
 				System.out.println(errorMessage);
 				throw new RuntimeException(errorMessage);
 			}
