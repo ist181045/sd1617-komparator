@@ -149,11 +149,15 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 private void verifySignature(SOAPMessageContext smc) {
 		
 		
-		try {			
+		try {
 			SOAPMessage message = smc.getMessage();
 			SOAPPart part = message.getSOAPPart();
 			SOAPEnvelope envelope = part.getEnvelope();
 			SOAPHeader header = envelope.getHeader();
+			
+			if(message.getSOAPBody().getFault() != null) {
+				return;
+			}
 			
 			Name name = envelope.createName(ENTITY_NAME, ENTITY_PREFIX, ENTITY_NAMESPACE);
 			Iterator it = header.getChildElements(name);

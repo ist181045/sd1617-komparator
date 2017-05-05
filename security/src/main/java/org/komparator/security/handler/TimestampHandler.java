@@ -130,6 +130,10 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 			SOAPPart sp = msg.getSOAPPart();
 			SOAPEnvelope se = sp.getEnvelope();
 			SOAPHeader sh = se.getHeader();
+			
+			if(msg.getSOAPBody().getFault() != null) {
+				return;
+			}
 
 			// check header
 			if (sh == null) {
