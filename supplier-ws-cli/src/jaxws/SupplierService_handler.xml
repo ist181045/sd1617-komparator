@@ -10,12 +10,18 @@
         <!--handler>
             <handler-class>org.komparator.security.handler.test.TimestampHandlerTest</handler-class>
         </handler-->
-        <!-->handler>
-            <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
-        </handler-->
 		<handler>
-            <handler-class>org.komparator.security.handler.SignatureHandler</handler-class>
+            <handler-class>org.komparator.security.handler.TokenizerHandler</handler-class>
         </handler>
+        <!--handler>
+            <handler-class>org.komparator.security.handler.test.TokenizerHandlerTest</handler-class>
+        </handler-->
+		<!--handler>
+            <handler-class>org.komparator.security.handler.SignatureHandler</handler-class>
+        </handler-->
+        <!--handler>
+            <handler-class>org.komparator.security.handler.test.SignatureHandlerTest</handler-class>
+        </handler-->
 		<handler>
             <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
         </handler>

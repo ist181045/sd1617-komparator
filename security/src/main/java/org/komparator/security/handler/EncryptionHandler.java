@@ -3,20 +3,23 @@ package org.komparator.security.handler;
 import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
 import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.text.SimpleDateFormat;
+import java.util.Iterator;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPPart;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
@@ -31,6 +34,11 @@ import pt.ulisboa.tecnico.sdis.cert.CertUtil;
  */
 public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 
+	private static final String NS_PREFIX = "ns2";
+	private static final String BUYCART_HEADER = "buyCart";
+	private static final String CC_NS = "http://ws.mediator.komparator.org/";
+	
+	
 	//
 	// Handler interface implementation
 	//
@@ -51,9 +59,10 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		if(outbound)
+		String sender = SecurityManager.getInstance().getSender();
+		if(outbound && sender.equals("A58_Mediator"))
 			encrypt(smc);
-		else
+		else 
 			decrypt(smc);
 		return true;
 	}
@@ -73,9 +82,6 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 		// nothing to clean up
 	}
 
-	/** Date formatter used for outputting timestamps in ISO 8601 format */
-	private SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-
 	/**
 	 * Check the MESSAGE_OUTBOUND_PROPERTY in the context to see if this is an
 	 * outgoing or incoming message. Write a brief message to the print stream
@@ -87,32 +93,45 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 		try {
 			
 			SOAPMessage msg = smc.getMessage();
-			SOAPEnvelope env = msg.getSOAPPart().getEnvelope();
+			SOAPPart sp = msg.getSOAPPart();
+			SOAPEnvelope se = sp.getEnvelope();
+			SOAPBody body = se.getBody();
 			
-			String destination = SecurityManager.getInstance().getDestination();
+			Name name = se.createName(BUYCART_HEADER, NS_PREFIX, CC_NS);
 			
-			if(destination == null) {
-				throw new RuntimeException("Destination entity is null");
+			
+			@SuppressWarnings("rawtypes")
+			Iterator it = body.getChildElements(name);
+			// check header element
+			if (!it.hasNext()) {
+				{
+					return;
+				}
 			}
+			SOAPElement element = (SOAPElement) it.next();
 			
-			PublicKey key = CertUtil.getPublicKeyFromCertificate(CertUtil.getX509CertificateFromResource(destination + ".cer"));
+			name = se.createName("creditCardNr", "", "");
+			it = element.getChildElements(name);
+			// check header element
+			if (!it.hasNext()) {
+				{
+					return;
+				}
+			}
+			element = (SOAPElement) it.next();
 			
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			msg.writeTo(out);
-			byte[] bytes = parseBase64Binary(new String(out.toByteArray()));
+			System.out.println("Starting encrypt");
 			
-			env.setTextContent(printBase64Binary(CryptoUtil.asymCipher(key, bytes)));
+			PublicKey key = CertUtil.getPublicKeyFromCertificate(CertUtil.getX509CertificateFromResource("A58_Mediator.cer"));
 			
 			
-		} catch (SOAPException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (CertificateException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			byte[] bytes = parseBase64Binary(element.getTextContent());
+			
+			element.setTextContent(printBase64Binary(CryptoUtil.asymCipher(key, bytes)));
+			
+			
+		} catch (Exception e) {
+			System.out.println("Couldn't encrypt credit card" + e.getMessage());
 		}
 		
 	}
@@ -122,39 +141,46 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 		try {
 			
 			SOAPMessage msg = smc.getMessage();
-			SOAPEnvelope env = msg.getSOAPPart().getEnvelope();
+			SOAPPart sp = msg.getSOAPPart();
+			SOAPEnvelope se = sp.getEnvelope();
+			SOAPBody body = se.getBody();
 			
-			String entity = SecurityManager.getInstance().getSender();
+			Name name = se.createName(BUYCART_HEADER, NS_PREFIX, CC_NS);
 			
-			if(entity == null) {
-				throw new RuntimeException("Entity is null");
+			
+			@SuppressWarnings("rawtypes")
+			Iterator it = body.getChildElements(name);
+			// check header element
+			if (!it.hasNext()) {
+				{
+					return;
+				}
 			}
+			SOAPElement element = (SOAPElement) it.next();
 			
-			PrivateKey key = CertUtil.getPrivateKeyFromKeyStoreResource(entity + ".jks", SecurityManager.getInstance().getPassword().toCharArray(), entity.toLowerCase(), SecurityManager.getInstance().getPassword().toCharArray());
+			name = se.createName("creditCardNr", "", "");
+			it = element.getChildElements(name);
+			// check header element
+			if (!it.hasNext()) {
+				{
+					return;
+				}
+			}
+			element = (SOAPElement) it.next();
 			
-			/*ByteArrayOutputStream out = new ByteArrayOutputStream();
-			msg.writeTo(out);
-			byte[] bytes = parseBase64Binary(new String(out.toByteArray()));*/
+			System.out.println("Starting decrypt");
+
 			
-			byte[] bytes = parseBase64Binary(env.getTextContent());
+			PrivateKey key = CertUtil.getPrivateKeyFromKeyStoreResource("A58_Mediator.jks", SecurityManager.getInstance().getPassword().toCharArray(), "a58_mediator", SecurityManager.getInstance().getPassword().toCharArray());			
 			
-			CryptoUtil.asymCipher(key, bytes);
+			byte[] bytes = parseBase64Binary(element.getTextContent());
+			
+			element.setTextContent(printBase64Binary(CryptoUtil.asymDecipher(key, bytes)));
 			
 			
-		} catch (SOAPException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnrecoverableKeyException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		} catch (Exception e) {
+			System.out.println("Couldn't decrypt credit card" + e.getMessage());
 		}
-		
 	}
 
 }

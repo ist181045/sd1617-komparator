@@ -5,5 +5,11 @@
         <handler>
             <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
         </handler>
+        <handler>
+            <handler-class>org.komparator.security.handler.EncryptionHandler</handler-class>
+        </handler>
+        <handler>
+            <handler-class>org.komparator.security.handler.LoggingHandler</handler-class>
+        </handler>
     </handler-chain>
 </handler-chains>
