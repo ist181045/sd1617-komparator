@@ -13,6 +13,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.komparator.supplier.ws.*;
+import org.komparator.supplier.ws.BadText_Exception;
+import org.komparator.supplier.ws.ProductView;
+
 /**
  * Test suite
  */
@@ -40,7 +43,7 @@ public class SearchProductsIT extends BaseIT {
 		{
 			ProductView product = new ProductView();
 			product.setId("Y2");
-			product.setDesc("Soccer ball");
+			product.setDesc("Baseball");
 			product.setPrice(20);
 			product.setQuantity(20);
 			client.createProduct(product);
@@ -48,7 +51,7 @@ public class SearchProductsIT extends BaseIT {
 		{
 			ProductView product = new ProductView();
 			product.setId("Z3");
-			product.setDesc("Racket");
+			product.setDesc("Racket ball");
 			product.setPrice(30);
 			product.setQuantity(30);
 			client.createProduct(product);
@@ -103,8 +106,8 @@ public class SearchProductsIT extends BaseIT {
 	public void newLineDescription() throws BadText_Exception {
 		client.searchProducts("\n");
 	}
-	
-	
+
+
 	
 	// main tests
 
@@ -118,6 +121,16 @@ public class SearchProductsIT extends BaseIT {
 		assertEquals(10, searchResults.get(0).getQuantity());
 		assertEquals(desc, searchResults.get(0).getDesc());
 	}
+
+	@Test
+	public void searchProductsAllMatchTest() throws BadText_Exception {
+		List<ProductView> searchResults = client.searchProducts("ball");
+		assertNotNull(searchResults);
+		assertEquals(3, searchResults.size());
+
+		for (ProductView product : searchResults)
+			assertTrue(product.getDesc().contains("ball"));
+	}
 	
 	@Test
 	public void searchProductNotExists() throws BadText_Exception {
@@ -126,41 +139,20 @@ public class SearchProductsIT extends BaseIT {
 	
 	@Test
 	public void searchProductTwoExist() throws BadText_Exception {
-		String desc = "ball";
-		
-		List<ProductView> searchResults = client.searchProducts(desc);
-		
-		ProductView product1 = searchResults.get(0);
-		ProductView product2 = searchResults.get(1);
-		
+		List<ProductView> searchResults = client.searchProducts("Bas");
 		assertEquals(2, searchResults.size());
-		
-		if(product1.getId().equals("X1")) {
-			assertEquals(10, product1.getPrice());
-			assertEquals(10, product1.getQuantity());
-			assertEquals("Basketball", product1.getDesc());
-			
-			assertEquals("Y2", product2.getId());
-			assertEquals(20, product2.getPrice());
-			assertEquals(20, product2.getQuantity());
-			assertEquals("Soccer ball", product2.getDesc());
-			
-		}
-		else if(product1.getId().equals("Y2")) {
-			assertEquals(20, product1.getPrice());
-			assertEquals(20, product1.getQuantity());
-			assertEquals("Soccer ball", product1.getDesc());
-			
-			assertEquals("X1", product2.getId());
-			assertEquals(10, product2.getPrice());
-			assertEquals(10, product2.getQuantity());
-			assertEquals("Basketball", product2.getDesc());
-		}
-		else {
-			fail();
-		}
-		
-		
+
+		for (ProductView product : searchResults)
+			assertTrue(product.getDesc().contains("Bas"));
+	}
+
+	@Test
+	public void searchProductsCaseTest() throws BadText_Exception {
+		// product descriptions are case sensitive,
+		// so "BALL" is not the same as "ball"
+		List<ProductView> products = client.searchProducts("BALL");
+		assertNotNull(products);
+		assertEquals(0, products.size());
 	}
 	
 
