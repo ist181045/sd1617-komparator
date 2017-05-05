@@ -1,13 +1,13 @@
 package org.komparator.mediator.ws.it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.List;
 
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -26,8 +26,6 @@ public class SearchItemsIT extends BaseIT {
 	// static members
 	private static SupplierClient sc1;
 	private static SupplierClient sc2;
-	
-	private static String NON_EXISTENT_DESC = "Lalalala";
 
 	// one-time initialization and clean-up
 	@BeforeClass
@@ -54,7 +52,7 @@ public class SearchItemsIT extends BaseIT {
 					//Warning: it will be changed
 					ProductView product = new ProductView();
 					product.setId("I1420");
-					product.setDesc("Zero Quantity");
+					product.setDesc("Zero Quantity description");
 					product.setPrice(10);
 					product.setQuantity(1);
 					sc1.createProduct(product);
@@ -70,7 +68,7 @@ public class SearchItemsIT extends BaseIT {
 				{
 					ProductView product = new ProductView();
 					product.setId("I1203");
-					product.setDesc("Fancy");
+					product.setDesc("Yet another fancy description");
 					product.setPrice(9);
 					product.setQuantity(20);
 					sc2.createProduct(product);
@@ -133,11 +131,55 @@ public class SearchItemsIT extends BaseIT {
 	//Success cases
 	@Test 
 	public void nonExistentDesc() throws InvalidText_Exception {
-		List<ItemView> products = mediatorClient.searchItems(NON_EXISTENT_DESC);
+		List<ItemView> products = mediatorClient.searchItems("Lalalalala");
 		assertEquals(0, products.size());
 	}
-	
-	@Test 
+
+	@Test
+	public void nonExistingItem() throws InvalidText_Exception {
+		List<ItemView> products = mediatorClient.searchItems("I1203");
+		assertEquals(0, products.size());
+	}
+
+	@Test
+	public void unorderedSearch() throws InvalidText_Exception {
+		List<ItemView> products = mediatorClient.searchItems("desc");
+		assertEquals(4, products.size());
+	}
+
+	@Test
+	public void orderedProducts() throws InvalidText_Exception {
+		List<ItemView> products = mediatorClient.searchItems("desc");
+		assertEquals(4, products.size());
+
+		// Check order criteria two by two
+		for (int i = 0; i < products.size() - 1; i++) {
+			// Check the first order criterion: product id
+			final String firstProductId = products.get(i).getItemId().getProductId();
+			final String secondProductId = products.get(i + 1).getItemId().getProductId();
+			assertTrue(firstProductId.compareTo(secondProductId) <= 0);
+			// Check the second order criterion: price
+			if (firstProductId.equals(secondProductId)) {
+				final int firstPrice = products.get(i).getPrice();
+				final int secondPrice = products.get(i + 1).getPrice();
+				assertTrue(firstPrice <= secondPrice);
+			}
+		}
+	}
+
+	@Test
+	public void testCaseSensitivity() throws InvalidText_Exception {
+		{
+			List<ItemView> items = mediatorClient.searchItems("zero");
+			assertEquals(0, items.size());
+		}
+		{
+			List<ItemView> items = mediatorClient.searchItems("Zero");
+			assertEquals(1, items.size());
+		}
+	}
+
+	@Test
 	public void successOneItem() throws InvalidText_Exception {
 		List<ItemView> products = mediatorClient.searchItems("product");
 		
@@ -147,7 +189,6 @@ public class SearchItemsIT extends BaseIT {
 		assertEquals(sc1.getWsName(), products.get(0).getItemId().getSupplierId());
 		assertEquals("Fancy product description", products.get(0).getDesc());
 		assertEquals(10, products.get(0).getPrice());
-		
 	}
 	
 	@Test 
@@ -168,7 +209,7 @@ public class SearchItemsIT extends BaseIT {
 		
 		assertEquals("I1420", products.get(0).getItemId().getProductId());
 		assertEquals(sc1.getWsName(), products.get(0).getItemId().getSupplierId());
-		assertEquals("Zero Quantity", products.get(0).getDesc());
+		assertEquals("Zero Quantity description", products.get(0).getDesc());
 		assertEquals(10, products.get(0).getPrice());
 		
 	}
@@ -179,7 +220,7 @@ public class SearchItemsIT extends BaseIT {
 	public void successMultipleSupplier() throws InvalidText_Exception {
 		List<ItemView> products = mediatorClient.searchItems("Fancy");
 		
-		assertEquals(3, products.size());
+		assertEquals(2, products.size());
 		
 		assertEquals("I1202", products.get(0).getItemId().getProductId());
 		assertEquals(sc1.getWsName(), products.get(0).getItemId().getSupplierId());
@@ -187,15 +228,9 @@ public class SearchItemsIT extends BaseIT {
 		assertEquals(10, products.get(0).getPrice());
 		
 		assertEquals("I1203", products.get(1).getItemId().getProductId());
-		assertEquals(sc2.getWsName(), products.get(1).getItemId().getSupplierId());
-		assertEquals("Fancy", products.get(1).getDesc());
-		assertEquals(9, products.get(1).getPrice());
-		
-		
-		assertEquals("I1203", products.get(2).getItemId().getProductId());
-		assertEquals(sc1.getWsName(), products.get(2).getItemId().getSupplierId());
-		assertEquals("Fancy description", products.get(2).getDesc());
-		assertEquals(10, products.get(2).getPrice());
+		assertEquals(sc1.getWsName(), products.get(1).getItemId().getSupplierId());
+		assertEquals("Fancy description", products.get(1).getDesc());
+		assertEquals(10, products.get(1).getPrice());
 		
 	}
 	

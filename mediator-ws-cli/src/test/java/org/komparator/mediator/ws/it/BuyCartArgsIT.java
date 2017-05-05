@@ -46,14 +46,15 @@ public class BuyCartArgsIT extends BaseIT {
             { "\r",           CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Carriage Return"  },
             { "abc\r\n\tabc", CC_NUMBER, InvalidCartId_Exception.class, "Cart ID: Mixed Whitespace" },
 
-            { CART_ID,           null, InvalidCreditCard_Exception.class, "CC Number: Null"             },
-            { CART_ID,             "", InvalidCreditCard_Exception.class, "CC Number: Empty String"     },
-            { CART_ID,           "  ", InvalidCreditCard_Exception.class, "CC Number: Spaces"           },
-            { CART_ID,           "\n", InvalidCreditCard_Exception.class, "CC Number: Linefeed"         },
-            { CART_ID,           "\t", InvalidCreditCard_Exception.class, "CC Number: Horizontal Tab"   },
-            { CART_ID,           "\r", InvalidCreditCard_Exception.class, "CC Number: Carriage Return"  },
-            { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class, "CC Number: Mixed Whitespace" },
-            { CART_ID, "123456789012", InvalidCreditCard_Exception.class, "CC Number: Invalid Number"   },
+            { CART_ID,           null, InvalidCreditCard_Exception.class, "CC Number: Null"              },
+            { CART_ID,             "", InvalidCreditCard_Exception.class, "CC Number: Empty String"      },
+            { CART_ID,           "  ", InvalidCreditCard_Exception.class, "CC Number: Spaces"            },
+            { CART_ID,           "\n", InvalidCreditCard_Exception.class, "CC Number: Linefeed"          },
+            { CART_ID,           "\t", InvalidCreditCard_Exception.class, "CC Number: Horizontal Tab"    },
+            { CART_ID,           "\r", InvalidCreditCard_Exception.class, "CC Number: Carriage Return"   },
+            { CART_ID, "abc\r\n\tabc", InvalidCreditCard_Exception.class, "CC Number: Mixed Whitespace"  },
+            { CART_ID, "123456789012", InvalidCreditCard_Exception.class, "CC Number: Invalid Number"    },
+            { CART_ID,      "4012888", InvalidCreditCard_Exception.class, "CC Number: Incomplete Number" },
 
             { CART_ID,      CC_NUMBER, InvalidCartId_Exception.class, "Cart: Doesnt Exist" }
         });
