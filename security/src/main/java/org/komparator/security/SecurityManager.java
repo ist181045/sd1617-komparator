@@ -30,4 +30,8 @@ public class SecurityManager {
     public void setSender(String arg) {
     	sender = arg;
     }
+    
+    public String getPassword() {
+    	return KEY_PASSWORD;
+    }
 }
