@@ -32,6 +32,8 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
+import org.komparator.security.SecurityManager;
+
 import pt.ulisboa.tecnico.sdis.cert.CertUtil;
 import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
 import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
@@ -100,10 +102,10 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 		
 		
 		try {
-			String entity = (String)smc.get("ws_name");
+			String entity = SecurityManager.getInstance().getSender();
 			
 			if(entity == null)
-				entity = "A58_Mediator";
+				throw new RuntimeException("Entity is null");
 			
 			SOAPMessage message = smc.getMessage();
 			SOAPPart part = message.getSOAPPart();
@@ -119,7 +121,7 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 			
 			element.addTextNode(entity);
 			
-			System.out.println("Added entity name to SOAP header: " + entity);
+			System.out.printf("%nAdded entity name to SOAP header: " + entity + "%n%n");
 			
 			KeyStore keystore = CertUtil.readKeystoreFromResource(entity + ".jks", KEYSTORE_PASSWORD.toCharArray());
 			
@@ -133,6 +135,8 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 			SOAPHeaderElement signature = header.addHeaderElement(envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE));;
 			
 			signature.addTextNode(printBase64Binary(digest));
+			
+			System.out.printf("%nSigned SOAP header%n%n");
 			
 		} catch (SOAPException se) {
 			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());
@@ -175,6 +179,8 @@ private void verifySignature(SOAPMessageContext smc) {
 			
 			String cString = ca.getCertificate(entity);
 			
+			System.out.printf("%nReceived Certificate from CA%n%n");
+			
 			byte[] bytes = cString.getBytes(StandardCharsets.UTF_8);
 			InputStream in = new ByteArrayInputStream(bytes);
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
@@ -209,6 +215,8 @@ private void verifySignature(SOAPMessageContext smc) {
 				System.out.println(errorMessage);
 				throw new RuntimeException(errorMessage);
 			}
+			
+			System.out.printf("%nVerified valid Signature%n%n");
 			
 		} catch (SOAPException se) {
 			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());

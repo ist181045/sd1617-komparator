@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.xml.ws.Endpoint;
 
+import org.komparator.security.SecurityManager;
+
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 
 
@@ -60,6 +62,7 @@ public class SupplierEndpointManager {
 		this.wsURL = wsURL;
 		this.wsName = wsName;
 		this.uddiURL = uddiURL;
+		SecurityManager.getInstance().setSender(getWsName());
 	}
 
 	/* end point management */

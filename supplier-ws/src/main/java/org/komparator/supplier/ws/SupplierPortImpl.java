@@ -9,6 +9,7 @@ import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.handler.MessageContext;
 
+import org.komparator.security.SecurityManager;
 import org.komparator.supplier.domain.Product;
 import org.komparator.supplier.domain.Purchase;
 import org.komparator.supplier.domain.QuantityException;
@@ -118,7 +119,7 @@ public class SupplierPortImpl implements SupplierPortType {
 		builder.append("Hello ").append(name);
 		builder.append(" from ").append(wsName);
 		
-		setSOAPContext();
+		SecurityManager.getInstance().setDestination("A58_Mediator");
 		
 		return builder.toString();
 	}

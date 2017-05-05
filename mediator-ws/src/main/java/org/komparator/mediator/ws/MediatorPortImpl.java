@@ -475,7 +475,7 @@ public class MediatorPortImpl implements MediatorPortType {
             List<SupplierClient> suppliers = new ArrayList<>();
             for (UDDIRecord element : uddiRecords) {
                 try {
-                    SupplierClient temp = new SupplierClient(element.getUrl());
+                    SupplierClient temp = new SupplierClient(element.getUrl(), element.getOrgName());
                     temp.setWsName(element.getOrgName());
                     if (temp.ping("A58_Mediator") != null)
                         suppliers.add(temp);

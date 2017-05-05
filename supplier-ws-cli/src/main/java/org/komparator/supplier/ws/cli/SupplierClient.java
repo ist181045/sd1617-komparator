@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.xml.ws.BindingProvider;
 
+import org.komparator.security.SecurityManager;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadProduct_Exception;
 import org.komparator.supplier.ws.BadQuantity_Exception;
@@ -66,6 +67,7 @@ public class SupplierClient implements SupplierPortType {
 	/** constructor with provided web service URL */
 	public SupplierClient(String wsURL) throws SupplierClientException {
 		this.wsURL = wsURL;
+		SecurityManager.getInstance().setSender("A58_Mediator");
 		createStub();
 	}
 	
@@ -73,6 +75,7 @@ public class SupplierClient implements SupplierPortType {
 	public SupplierClient(String uddiURL, String wsName) throws SupplierClientException {
 		this.uddiURL = uddiURL;
 		this.wsName = wsName;
+		SecurityManager.getInstance().setSender("A58_Mediator");
 		uddiLookup();
 		createStub();
 	}
@@ -138,6 +141,7 @@ public class SupplierClient implements SupplierPortType {
 
 	@Override
 	public String ping(String name) {
+		SecurityManager.getInstance().setDestination(getWsName());
 		return port.ping(name);
 	}
 
