@@ -112,17 +112,17 @@ public class MediatorPortImpl implements MediatorPortType {
 
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
-                ProductView productview;
+                ProductView productview = null;
                 try {
                     productview = supplier.getProduct(productId);
                 } catch (BadProductId_Exception e) {
-                    System.err.println("Could not get product: "
-                            + e.getMessage());
-                    return null;
+                    System.err.println("Could not get product in"
+                            + supplier.getWsName() + ": " + e.getMessage());
                 }
 
                 if (productview == null) {
-                    throwInvalidItemId("Couldn't find product (" + productId + ")");
+                    System.err.println("Couldn't find product (" + productId
+                            + ") in " + supplier.getWsName());
                 } else {
                     products.add(newItemView(productview, supplier.getWsName()));
                 }
