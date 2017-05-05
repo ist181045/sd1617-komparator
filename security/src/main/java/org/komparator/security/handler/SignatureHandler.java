@@ -37,7 +37,7 @@ import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
 import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
 
 /**
- * This SOAPHandler outputs the contents of inbound and outbound messages.
+ * This SOAPHandler signs or verifies the signature of outbound and inbound messages respectively.
  */
 public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 
@@ -53,9 +53,9 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 	private static final String ENTITY_PREFIX = "ent";
 	private static final String ENTITY_NAMESPACE = "ent:entity";
 	
-	private static final String SIGNATURE_NAME = "signature";
-	private static final String SIGNATURE_PREFIX = "sig";
-	private static final String SIGNATURE_NAMESPACE = "sig:signature";
+	public static final String SIGNATURE_NAME = "signature";
+	public static final String SIGNATURE_PREFIX = "sig";
+	public static final String SIGNATURE_NAMESPACE = "sig:signature";
 
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
@@ -84,7 +84,6 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		//logToSystemOut(smc);
 		return true;
 	}
 
@@ -136,19 +135,13 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 			signature.addTextNode(printBase64Binary(digest));
 			
 		} catch (SOAPException se) {
-			System.out.println("deu merda boy");
-			se.printStackTrace();
-			
-			//TODO HANDLE THIS SHIT
-		} catch(IOException fnfe) {
-			System.out.println("IOException cenas");
-			fnfe.printStackTrace();
+			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());
+		} catch(IOException ioe) {
+			System.out.println("Signature Handler caught an IOException: " + ioe.getMessage());
 		} catch (KeyStoreException kse) {
-			System.out.println("KeyStoreException cenas " + kse.getMessage());
-			kse.printStackTrace();
+			System.out.println("Signature Handler caught a KeyStoreException: " + kse.getMessage());
 		} catch (UnrecoverableKeyException uke) {
-			System.out.println("UnrecoverableKeyException cenas");
-			uke.printStackTrace();
+			System.out.println("Signature Handler caught an UnrecoverableKeyException: " + uke.getMessage());
 		}
 		
 	}
@@ -165,9 +158,8 @@ private void verifySignature(SOAPMessageContext smc) {
 			Name name = envelope.createName(ENTITY_NAME, ENTITY_PREFIX, ENTITY_NAMESPACE);
 			Iterator it = header.getChildElements(name);
 			
-			if(!it.hasNext())
-			{
-				String errorMessage = "Couldn't get Entity from header: ";
+			if(!it.hasNext()) {
+				String errorMessage = "Couldn't get Entity field from header";
 				System.out.println(errorMessage);
 				throw new RuntimeException(errorMessage);
 			}
@@ -185,15 +177,21 @@ private void verifySignature(SOAPMessageContext smc) {
 			Certificate cert = certFactory.generateCertificate(in);
 			
 			
-			if(!CertUtil.verifySignedCertificate(cert, CertUtil.getX509CertificateFromResource("ca.cer")))
-				System.out.println("merda max je suis placeholder2");
+			if(!CertUtil.verifySignedCertificate(cert, CertUtil.getX509CertificateFromResource("ca.cer"))) {
+				String errorMessage = "Certificate from CA not valid";
+				System.out.println(errorMessage);
+				throw new RuntimeException(errorMessage);
+			}
 			
 			name = envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE);
 			
 			it = header.getChildElements(name);
 			
-			if(!it.hasNext())
-				System.out.println("merda max je suis placeholder3");
+			if(!it.hasNext()) {
+				String errorMessage = "Couldn't get Signature field from header";
+				System.out.println(errorMessage);
+				throw new RuntimeException(errorMessage);
+			}
 			
 			element = (SOAPElement) header.removeChild((Node)it.next());
 			String signature = element.getValue();
@@ -202,23 +200,20 @@ private void verifySignature(SOAPMessageContext smc) {
 			message.writeTo(out);
 			bytes = parseBase64Binary(new String(out.toByteArray()));
 			
-			if(!CertUtil.verifyDigitalSignature("SHA256WithRSA", cert, bytes, parseBase64Binary(signature)))
-				throw new RuntimeException("Signature was not correctly verified");
+			if(!CertUtil.verifyDigitalSignature("SHA256WithRSA", cert, bytes, parseBase64Binary(signature))) {
+				String errorMessage = "Signature was not correctly verified";
+				System.out.println(errorMessage);
+				throw new RuntimeException(errorMessage);
+			}
 			
 		} catch (SOAPException se) {
-			System.out.println("deu merda boy");
-			se.printStackTrace();
-			
-			//TODO HANDLE THIS SHIT
+			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());
 		} catch(CertificateException ce) {
-			System.out.println("CertificateException cenas");
-			ce.printStackTrace();
-		} catch(IOException fnfe) {
-			System.out.println("IOException cenas");
-			fnfe.printStackTrace();
+			System.out.println("Signature Handler caught a CertificateException: " + ce.getMessage());
+		} catch(IOException ioe) {
+			System.out.println("Signature Handler caught an IOException: " + ioe.getMessage());
 		} catch(CAClientException cae) {
-			System.out.println("CAClientException cenas");
-			cae.printStackTrace();
+			System.out.println("Signature Handler caught a CAClientException: " + cae.getMessage());
 		}
 		
 	}
