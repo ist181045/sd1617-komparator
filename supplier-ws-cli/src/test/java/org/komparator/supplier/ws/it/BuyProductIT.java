@@ -1,7 +1,9 @@
 package org.komparator.supplier.ws.it;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,8 +47,44 @@ public class BuyProductIT extends BaseIT {
 		String purchaseId = client.buyProduct("I1202", 4);
 		ProductView product = client.getProduct("I1202");
 
-		Assert.assertEquals("1", purchaseId);
-		Assert.assertEquals(16, product.getQuantity());
+		assertEquals("1", purchaseId);
+		assertEquals(16, product.getQuantity());
+	}
+
+	@Test
+	public void buyProductResultTest() throws Exception {
+		String result = client.buyProduct("I1202", 1);
+		assertNotNull(result);
+	}
+
+	@Test
+	public void buyProductOneTest() throws Exception {
+		assertEquals(20, client.getProduct("I1202").getQuantity());
+
+		String result = client.buyProduct("I1202", 1);
+		assertNotNull(result);
+
+		assertEquals(19, client.getProduct("I1202").getQuantity());
+	}
+
+	@Test
+	public void buyProductHalfTest() throws Exception {
+		assertEquals(20, client.getProduct("I1202").getQuantity());
+
+		String result = client.buyProduct("I1202", 10);
+		assertNotNull(result);
+
+		assertEquals(10, client.getProduct("I1202").getQuantity());
+	}
+
+	@Test
+	public void buyProductAllTest() throws Exception {
+		assertEquals(20, client.getProduct("I1202").getQuantity());
+
+		String result = client.buyProduct("I1202", 20);
+		assertNotNull(result);
+
+		assertEquals(0, client.getProduct("I1202").getQuantity());
 	}
 
 	/*

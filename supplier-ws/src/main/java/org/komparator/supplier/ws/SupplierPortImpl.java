@@ -3,8 +3,13 @@ package org.komparator.supplier.ws;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.annotation.Resource;
+import javax.jws.HandlerChain;
 import javax.jws.WebService;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 
+import org.komparator.security.SecurityManager;
 import org.komparator.supplier.domain.Product;
 import org.komparator.supplier.domain.Purchase;
 import org.komparator.supplier.domain.QuantityException;
@@ -18,8 +23,11 @@ import org.komparator.supplier.domain.Supplier;
 		targetNamespace = "http://ws.supplier.komparator.org/", 
 		serviceName = "SupplierService"
 )
-
+@HandlerChain(file = "/supplier-ws_handler-chain.xml")
 public class SupplierPortImpl implements SupplierPortType {
+	
+	@Resource
+	private WebServiceContext webServiceContext;
 
 	// end point manager
 	private SupplierEndpointManager endpointManager;
@@ -110,6 +118,9 @@ public class SupplierPortImpl implements SupplierPortType {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Hello ").append(name);
 		builder.append(" from ").append(wsName);
+		
+		SecurityManager.getInstance().setDestination("A58_Mediator");
+		
 		return builder.toString();
 	}
 	@Override
@@ -223,6 +234,11 @@ public class SupplierPortImpl implements SupplierPortType {
 		InsufficientQuantity faultInfo = new InsufficientQuantity();
 		faultInfo.message = message;
 		throw new InsufficientQuantity_Exception(message, faultInfo);
+	}
+	
+	private void setSOAPContext() {
+		MessageContext messageContext = webServiceContext.getMessageContext();
+		messageContext.put("ws_name", endpointManager.getWsName());
 	}
 
 }

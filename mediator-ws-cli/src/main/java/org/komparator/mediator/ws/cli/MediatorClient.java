@@ -19,6 +19,8 @@ import org.komparator.mediator.ws.MediatorService;
 import org.komparator.mediator.ws.NotEnoughItems_Exception;
 import org.komparator.mediator.ws.ShoppingResultView;
 
+import org.komparator.security.SecurityManager;
+
 import static javax.xml.ws.BindingProvider.ENDPOINT_ADDRESS_PROPERTY;
 
 /**
@@ -72,6 +74,7 @@ public class MediatorClient implements MediatorPortType {
     public MediatorClient(String uddiURL, String wsName) throws MediatorClientException {
         this.uddiURL = uddiURL;
         this.wsName = wsName;
+        SecurityManager.getInstance().setSender("MediatorClient");
         uddiLookup();
         createStub();
     }
