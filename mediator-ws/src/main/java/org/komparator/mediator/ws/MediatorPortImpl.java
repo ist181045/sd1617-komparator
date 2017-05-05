@@ -325,26 +325,40 @@ public class MediatorPortImpl implements MediatorPortType {
         if (pv == null) {
             throwInvalidItemId("Couldn't find product (" + productId + "): ");
         } else {
-            if (pv.getQuantity() < itemQty) {
-                throwNotEnoughItems("Quantity not available in supplier");
-            }
-
             CartView cv = carts.get(cartId);
             if (cv == null) {
                 cv = new CartView();
                 cv.setCartId(cartId);
             }
 
-            ItemView iv = newItemView(pv, supplierId);
-            CartItemView civ = new CartItemView();
+            CartItemView cartItemView = null;
+            for (CartItemView civ : cv.getItems()) {
+                ItemIdView iiv = civ.getItem().getItemId();
+                if (iiv.getProductId().equals(productId)
+                        && iiv.getSupplierId().equals(supplierId)) {
+                    cartItemView = civ;
+                    itemQty += civ.getQuantity();
+                    break;
+                }
+            }
 
-            civ.setItem(iv);
-            civ.setQuantity(itemQty);
-            cv.getItems().add(civ);
+            if (pv.getQuantity() < itemQty) {
+                throwNotEnoughItems("Quantity not available in supplier");
+            }
 
-            carts.put(cartId, cv);
+            if (cartItemView != null) {
+                cartItemView.setQuantity(itemQty);
+            } else {
+                ItemView iv = newItemView(pv, supplierId);
+                CartItemView civ = new CartItemView();
+
+                civ.setItem(iv);
+                civ.setQuantity(itemQty);
+                cv.getItems().add(civ);
+
+                carts.put(cartId, cv);
+            }
         }
-
     }
 
     public String ping(String arg0) {
