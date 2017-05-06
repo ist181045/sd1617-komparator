@@ -16,9 +16,9 @@
         <!--handler>
             <handler-class>org.komparator.security.handler.test.TokenizerHandlerTest</handler-class>
         </handler-->
-		<!--handler>
+		<handler>
             <handler-class>org.komparator.security.handler.SignatureHandler</handler-class>
-        </handler-->
+        </handler>
         <!--handler>
             <handler-class>org.komparator.security.handler.test.SignatureHandlerTest</handler-class>
         </handler-->
