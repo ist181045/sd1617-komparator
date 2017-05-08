@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -59,6 +60,9 @@ public class MediatorPortImpl implements MediatorPortType {
     // shopping carts
     private ConcurrentMap<String, CartView> carts = new ConcurrentHashMap<>();
 
+    // Last keep alive history
+    private LocalDateTime imAliveHistory = null;
+    
     // shopping history
     private SortedMap<LocalDateTime, ShoppingResultView> shoppingHistory
             = new TreeMap<>();
@@ -390,6 +394,14 @@ public class MediatorPortImpl implements MediatorPortType {
 
         return "No suppliers available!";
     }
+    
+    @Override
+    public void imAlive() {
+    	String mediatorId = endpointManager.getWsI();
+    	if (!mediatorId.equals("1")) {
+    		setImAliveHistory(LocalDateTime.now());
+    	}
+    }
 
     @Override
     public synchronized List<ShoppingResultView> shopHistory() {
@@ -503,4 +515,12 @@ public class MediatorPortImpl implements MediatorPortType {
             return suppliers;
         }
     }
+
+	public LocalDateTime getImAliveHistory() {
+		return imAliveHistory;
+	}
+
+	public void setImAliveHistory(LocalDateTime imAliveHistory) {
+		this.imAliveHistory = imAliveHistory;
+	}
 }

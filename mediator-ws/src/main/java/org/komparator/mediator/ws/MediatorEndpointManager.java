@@ -24,6 +24,11 @@ public class MediatorEndpointManager {
      * Web Service location to publish
      */
     private String wsURL = null;
+    
+    /**
+     * Web Service number
+     */
+    private String wsI = null;
 
     /**
      * Port implementation
@@ -48,10 +53,11 @@ public class MediatorEndpointManager {
     /**
      * constructor with provided UDDI location, WS name, and WS URL
      */
-    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL) {
+    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL, String wsI) {
         this.uddiURL = uddiURL;
         this.wsName = wsName;
         this.wsURL = wsURL;
+        this.wsI = wsI;
 
         portImpl = new MediatorPortImpl(this);
     }
@@ -75,7 +81,15 @@ public class MediatorEndpointManager {
     public String getWsName() {
         return wsName;
     }
+    
+    /**
+     * Get Web Service number
+     */
+    public String getWsI() {
+        return wsI;
+    }
 
+    
     /**
      * Obtain Port implementation
      */
@@ -158,12 +172,17 @@ public class MediatorEndpointManager {
         try {
             // publish to UDDI
             if (uddiURL != null) {
-                if (verbose) {
-                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
-                }
-                uddiNaming = new UDDINaming(uddiURL);
-                uddiNaming.rebind(wsName, wsURL);
+            	if (wsI != null && wsI.equals("1")){
+	                if (verbose) {
+	                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
+	                }
+	                uddiNaming = new UDDINaming(uddiURL);
+	                uddiNaming.rebind(wsName, wsURL);
+	                System.out.println("Started as primary mediator");
+	                return;
+            	}
             }
+        	System.out.println("Started as secondary mediator");
         } catch (Exception e) {
             uddiNaming = null;
             if (verbose) {

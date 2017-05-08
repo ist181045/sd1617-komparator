@@ -56,6 +56,10 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
             <xs:element name="shopHistory" type="tns:shopHistory"/>
 
             <xs:element name="shopHistoryResponse" type="tns:shopHistoryResponse"/>
+			
+			<xs:element name="imAlive" type="tns:imAlive"/>
+
+            <xs:element name="imAliveResponse" type="tns:imAliveResponse"/>
 
             <xs:complexType name="listCarts">
                 <xs:sequence/>
@@ -226,6 +230,14 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
                     <xs:element name="message" type="xs:string" minOccurs="0"/>
                 </xs:sequence>
             </xs:complexType>
+			
+			<xs:complexType name="imAlive">
+                <xs:sequence/>
+            </xs:complexType>
+			
+			<xs:complexType name="imAliveResponse">
+                <xs:sequence/>
+            </xs:complexType>
 
             <xs:simpleType name="result">
                 <xs:restriction base="xs:string">
@@ -307,6 +319,13 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
     <message name="shopHistoryResponse">
         <part name="parameters" element="tns:shopHistoryResponse"/>
     </message>
+	<message name="imAlive">
+        <part name="parameters" element="tns:imAlive"/>
+    </message>
+	<message name="imAliveResponse">
+        <part name="parameters" element="tns:imAliveResponse"/>
+    </message>
+	
 
     <!-- Port Type (Interface) -->
     <portType name="MediatorPortType">
@@ -351,6 +370,10 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
             <input wsam:Action="http://ws.mediator.komparator.org/Mediator/shopHistoryRequest" message="tns:shopHistory"/>
             <output wsam:Action="http://ws.mediator.komparator.org/Mediator/shopHistoryResponse" message="tns:shopHistoryResponse"/>
         </operation>
+		<operation name="imAlive">
+			<input wsam:Action="http://ws.mediator.komparator.org/Mediator/imAliveRequest" message="tns:imAlive"/>
+			<output wsam:Action="http://ws.mediator.komparator.org/Mediator/imAliveResponse" message="tns:imAliveResponse"/>
+		</operation>
     </portType>
 
     <!-- SOAP/HTTP Binding -->
@@ -447,6 +470,15 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
             </output>
         </operation>
         <operation name="shopHistory">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+		<operation name="imAlive">
             <soap:operation soapAction=""/>
             <input>
                 <soap:body use="literal"/>

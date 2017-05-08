@@ -182,4 +182,9 @@ public class MediatorClient implements MediatorPortType {
         return port.shopHistory();
     }
 
+	@Override
+	public void imAlive() {
+		port.imAlive();
+	}
+
 }

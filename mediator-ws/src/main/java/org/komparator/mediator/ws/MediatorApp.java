@@ -1,5 +1,7 @@
 package org.komparator.mediator.ws;
 
+import java.util.Timer;
+
 public class MediatorApp {
 
 	public static void main(String[] args) throws Exception {
@@ -12,6 +14,7 @@ public class MediatorApp {
 		String uddiURL = null;
 		String wsName = null;
 		String wsURL = null;
+		String wsI = null;
 
 		// Create server implementation object, according to options
 		MediatorEndpointManager endpoint = null;
@@ -22,12 +25,26 @@ public class MediatorApp {
 			uddiURL = args[0];
 			wsName = args[1];
 			wsURL = args[2];
-			endpoint = new MediatorEndpointManager(uddiURL, wsName, wsURL);
+			if(args[3] != null)
+				wsI = args[3];
+			else 
+				wsI = String.valueOf(wsURL.charAt(wsURL.indexOf(":", wsURL.indexOf(":") + 1) + 4));
+			
+			endpoint = new MediatorEndpointManager(uddiURL, wsName, wsURL, wsI);
+			
 			endpoint.setVerbose(true);
 		}
 
 		try {
 			endpoint.start();
+			
+			Timer timer = new Timer(/*isDaemon*/ true);
+			
+			LifeProof lifeProof = new LifeProof(wsI);
+			
+			timer.schedule(lifeProof, /*delay*/ 0 * 1000, /*period*/ 5 * 1000);
+			
+			
 			endpoint.awaitConnections();
 		} finally {
 			endpoint.stop();
