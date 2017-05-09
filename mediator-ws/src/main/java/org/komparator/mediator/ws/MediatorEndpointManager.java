@@ -1,9 +1,12 @@
 package org.komparator.mediator.ws;
 
-import javax.xml.ws.Endpoint;
-import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
-
 import java.io.IOException;
+
+import javax.xml.ws.Endpoint;
+
+import org.komparator.security.SecurityManager;
+
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 
 /**
  * End point manager
@@ -59,6 +62,7 @@ public class MediatorEndpointManager {
         this.wsURL = wsURL;
         this.wsI = wsI;
 
+        SecurityManager.getInstance().setSender(wsName);
         portImpl = new MediatorPortImpl(this);
     }
 

@@ -3,17 +3,18 @@ package org.komparator.security.handler;
 import static javax.xml.bind.DatatypeConverter.parseBase64Binary;
 import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.Name;
 import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPEnvelope;
@@ -24,8 +25,12 @@ import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
+import com.sun.xml.messaging.saaj.util.ByteOutputStream;
+
 import org.komparator.security.CryptoUtil;
 import org.komparator.security.SecurityManager;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import pt.ulisboa.tecnico.sdis.cert.CertUtil;
 
@@ -33,12 +38,9 @@ import pt.ulisboa.tecnico.sdis.cert.CertUtil;
  * This SOAPHandler outputs the contents of inbound and outbound messages.
  */
 public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
+	private static final String OPERATION_BUYCART = "buyCart";
+	private static final String PARAM_CC_NUMBER = "creditCardNr";
 
-	private static final String NS_PREFIX = "ns2";
-	private static final String BUYCART_HEADER = "buyCart";
-	private static final String CC_NS = "http://ws.mediator.komparator.org/";
-	
-	
 	//
 	// Handler interface implementation
 	//
@@ -59,12 +61,64 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		String sender = SecurityManager.getInstance().getSender();
-		if(outbound && sender.equals("A58_Mediator"))
-			encrypt(smc);
-		else 
-			decrypt(smc);
-		return true;
+
+		try {
+			SOAPMessage msg = smc.getMessage();
+			SOAPPart sp = msg.getSOAPPart();
+			SOAPEnvelope se = sp.getEnvelope();
+			SOAPBody body = se.getBody();
+
+			QName operation = (QName) smc.get(MessageContext.WSDL_OPERATION);
+			if (!operation.getLocalPart().equals(OPERATION_BUYCART)) {
+				return true; // Not what we're looking for
+			}
+
+			NodeList nodes = body.getFirstChild().getChildNodes();
+			for (int i = 0; i < nodes.getLength(); ++i) {
+				Node argument = nodes.item(i);
+				if (argument.getNodeName().equals(PARAM_CC_NUMBER)) {
+					String creditCard = argument.getTextContent();
+					byte[] result;
+
+					if (outbound) {
+						result = encrypt(parseBase64Binary(creditCard));
+					} else {
+						result = decrypt(parseBase64Binary(creditCard));
+					}
+
+					argument.setTextContent(printBase64Binary(result));
+					msg.saveChanges();
+					return true;
+				}
+			}
+
+			// Safe to proceed
+			return true;
+		} catch (CertificateException ce) {
+			String error = "Error retrieving certificate: " + ce.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		} catch (KeyStoreException kse) {
+			String error = "Error loading keystore: " + kse.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		} catch (UnrecoverableKeyException uke) {
+			String error = "Couldn't recover key: " + uke.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		} catch (SOAPException soape) {
+			String error = "SOAP error: " + soape.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		} catch (FileNotFoundException fnfe) {
+			String error = "File not found: " + fnfe.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		} catch (IOException ioe) {
+			String error = "I/O error: " + ioe.getMessage();
+			System.err.println(error);
+			throw new RuntimeException(error);
+		}
 	}
 
 	/** The handleFault method is invoked for fault message processing. */
@@ -82,105 +136,26 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 		// nothing to clean up
 	}
 
-	/**
-	 * Check the MESSAGE_OUTBOUND_PROPERTY in the context to see if this is an
-	 * outgoing or incoming message. Write a brief message to the print stream
-	 * and output the message. The writeTo() method can throw SOAPException or
-	 * IOException
-	 */
-	private void encrypt(SOAPMessageContext smc) {
-		
-		try {
-			
-			SOAPMessage msg = smc.getMessage();
-			SOAPPart sp = msg.getSOAPPart();
-			SOAPEnvelope se = sp.getEnvelope();
-			SOAPBody body = se.getBody();
-			
-			Name name = se.createName(BUYCART_HEADER, NS_PREFIX, CC_NS);
-			
-			
-			@SuppressWarnings("rawtypes")
-			Iterator it = body.getChildElements(name);
-			// check header element
-			if (!it.hasNext()) {
-				{
-					return;
-				}
-			}
-			SOAPElement element = (SOAPElement) it.next();
-			
-			name = se.createName("creditCardNr", "", "");
-			it = element.getChildElements(name);
-			// check header element
-			if (!it.hasNext()) {
-				{
-					return;
-				}
-			}
-			element = (SOAPElement) it.next();
-			
-			System.out.println("Starting encrypt");
-			
-			PublicKey key = CertUtil.getPublicKeyFromCertificate(CertUtil.getX509CertificateFromResource("A58_Mediator.cer"));
-			
-			
-			byte[] bytes = parseBase64Binary(element.getTextContent());
-			
-			element.setTextContent(printBase64Binary(CryptoUtil.asymCipher(key, bytes)));
-			
-			
-		} catch (Exception e) {
-			System.out.println("Couldn't encrypt credit card" + e.getMessage());
-		}
-		
-	}
-	
-	private void decrypt(SOAPMessageContext smc) {
-		
-		try {
-			
-			SOAPMessage msg = smc.getMessage();
-			SOAPPart sp = msg.getSOAPPart();
-			SOAPEnvelope se = sp.getEnvelope();
-			SOAPBody body = se.getBody();
-			
-			Name name = se.createName(BUYCART_HEADER, NS_PREFIX, CC_NS);
-			
-			
-			@SuppressWarnings("rawtypes")
-			Iterator it = body.getChildElements(name);
-			// check header element
-			if (!it.hasNext()) {
-				{
-					return;
-				}
-			}
-			SOAPElement element = (SOAPElement) it.next();
-			
-			name = se.createName("creditCardNr", "", "");
-			it = element.getChildElements(name);
-			// check header element
-			if (!it.hasNext()) {
-				{
-					return;
-				}
-			}
-			element = (SOAPElement) it.next();
-			
-			System.out.println("Starting decrypt");
+	private byte[] encrypt(byte[] plainBytes)
+			throws IOException, CertificateException {
+		String sender = SecurityManager.getInstance().getDestination();
+		Certificate certificate =
+				CertUtil.getX509CertificateFromResource(sender + ".cer");
+		PublicKey key = CertUtil.getPublicKeyFromCertificate(certificate);
 
-			
-			PrivateKey key = CertUtil.getPrivateKeyFromKeyStoreResource("A58_Mediator.jks", SecurityManager.getInstance().getPassword().toCharArray(), "a58_mediator", SecurityManager.getInstance().getPassword().toCharArray());			
-			
-			byte[] bytes = parseBase64Binary(element.getTextContent());
-			
-			element.setTextContent(printBase64Binary(CryptoUtil.asymDecipher(key, bytes)));
-			
-			
-		} catch (Exception e) {
-			System.out.println("Couldn't decrypt credit card" + e.getMessage());
-		}
+		return CryptoUtil.asymCipher(key, plainBytes);
 	}
 
+	private byte[] decrypt(byte[] encryptedBytes)
+			throws UnrecoverableKeyException, KeyStoreException,
+			FileNotFoundException {
+		String sender = SecurityManager.getInstance().getSender();
+		String password = SecurityManager.getInstance().getPassword();
+		KeyStore keyStore = CertUtil.readKeystoreFromResource(
+				sender + ".jks", password.toCharArray());
+		PrivateKey key = CertUtil.getPrivateKeyFromKeyStore(
+				sender.toLowerCase(), password.toCharArray(), keyStore);
+
+		return CryptoUtil.asymDecipher(key, encryptedBytes);
+	}
 }
