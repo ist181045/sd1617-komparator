@@ -4,56 +4,51 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class SecurityManager {
-    private static final SecurityManager instance = new SecurityManager();
-
+    private static final int MSG_TIMEOUT = 3;
     private static final String KEY_PASSWORD = "M6cggAUT";
-    
-    private static final int MAX_TIMEOUT = 3;
 
-    private String destination = null;
-    private String sender = null;
-    
-    private Set<String> tokens = new HashSet<String>();
+    private static SecurityManager theManager = null;
 
+    private String sender;
+    private String destination;
+    private Set<String> tokens;
 
     private SecurityManager() {
+        this.sender = null;
+        this.destination = null;
+        this.tokens = new HashSet<>();
     }
 
     public static SecurityManager getInstance() {
-        return instance;
+        if (theManager == null)
+            return new SecurityManager();
+        return theManager;
     }
-    
+
+    public static int getMsgTimeout() {
+        return MSG_TIMEOUT;
+    }
+
     public String getDestination() {
     	return destination;
     }
-    
-    public void setDestination(String arg) {
-    	destination = arg;
+
+    public void setDestination(String destination) {
+    	this.destination = destination;
     }
-    
+
     public String getSender() {
     	return sender;
     }
-    
-    public void setSender(String arg) {
-    	sender = arg;
+
+    public void setSender(String sender) {
+    	this.sender = sender;
     }
-    
+
     public String getPassword() {
     	return KEY_PASSWORD;
     }
-    
-    public static int getMaxTimeout() {
-    	return MAX_TIMEOUT;
-    }
-    
-    public void addToken(String token) {
-    	tokens.add(token);
-    }
-    public boolean checkToken(String token) {
-    	return token != null && tokens.contains(token);
-    }
-    
+
     public Set<String> getTokens() {
     	return tokens;
     }

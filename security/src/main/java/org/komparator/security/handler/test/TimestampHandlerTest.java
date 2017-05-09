@@ -14,11 +14,9 @@ import org.komparator.security.SecurityManager;
  * This SOAPHandler adds date and time to message header
  */
 public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
-	
 	//
 	// Handler interface implementation
 	//
-	
 	
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
@@ -27,9 +25,7 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public Set<QName> getHeaders() {
 		return null;
-		
 	}
-	
 
 	/**
 	 * The handleMessage method is invoked for normal processing of inbound and
@@ -61,14 +57,13 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 		// nothing to clean up
 	}
 
-	
 	private void delayMessage(SOAPMessageContext smc) {
 			
 		try {
 			
-			System.out.println("Sleeping :" + (SecurityManager.getMaxTimeout() + 1) + " seconds");
+			System.out.println("Sleeping :" + (SecurityManager.getMsgTimeout() + 1) + " seconds");
 			
-			TimeUnit.SECONDS.sleep(SecurityManager.getMaxTimeout() + 1);
+			TimeUnit.SECONDS.sleep(SecurityManager.getMsgTimeout() + 1);
 			
 			System.out.println("Sleep time is over");
 			

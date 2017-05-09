@@ -25,19 +25,13 @@ import org.komparator.security.SecurityManager;
  * This SOAPHandler adds date and time to message header
  */
 public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
-
-	
-	
-
 	private static final String NS_PREFIX = "fre";
 	private static final String TIMESTAMP_HEADER = "Timestamp";
 	private static final String TIMESTAMP_NS = "urn:fresh";
-	
-	
+
 	//
 	// Handler interface implementation
 	//
-	
 	
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
@@ -48,7 +42,6 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 		return null;
 		
 	}
-	
 
 	/**
 	 * The handleMessage method is invoked for normal processing of inbound and
@@ -165,7 +158,7 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 
 			long seconds = (new Date().getTime() - messageTimestamp.getTime())/1000;
 			
-			if (seconds < 0 || seconds > SecurityManager.getMaxTimeout() ){
+			if (seconds < 0 || seconds > SecurityManager.getMsgTimeout()){
 				{
 					String errorMessage = "Message time invalid";
 					System.out.println(errorMessage);

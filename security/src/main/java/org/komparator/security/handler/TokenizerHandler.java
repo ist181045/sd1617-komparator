@@ -25,19 +25,13 @@ import org.komparator.security.SecurityManager;
  * This SOAPHandler adds date and time to message header
  */
 public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
-
-	
-	
-
 	private static final String NS_PREFIX = "tok";
 	private static final String TOKEN_HEADER = "Token";
 	private static final String TOKEN_NS = "urn:token";
-	
-	
+
 	//
 	// Handler interface implementation
 	//
-	
 	
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
@@ -87,7 +81,6 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 	private void addToken(SOAPMessageContext smc) {
 			
 		try {
-			
 			// get SOAP envelope
 			SOAPMessage msg = smc.getMessage();
 			SOAPPart sp = msg.getSOAPPart();
@@ -97,8 +90,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 			SOAPHeader sh = se.getHeader();
 			if (sh == null)
 				sh = se.addHeader();
-					
-			
+
 			Name name = se.createName(TOKEN_HEADER, NS_PREFIX, TOKEN_NS);
 			SOAPHeaderElement element = sh.addHeaderElement(name);
 			
@@ -110,7 +102,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 			    random.nextBytes(bytes);
 			    token = printBase64Binary(bytes);
 			}
-			while (SecurityManager.getInstance().checkToken(token));
+			while (SecurityManager.getInstance().getTokens().contains(token));
 			
 			element.addTextNode(token);
 			
@@ -166,7 +158,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 			// get header element value
 			String token = element.getValue();
 			
-			if (SecurityManager.getInstance().checkToken(token)){
+			if (SecurityManager.getInstance().getTokens().contains(token)){
 				{
 					String errorMessage = "Token invalid";
 					System.out.println(errorMessage);
@@ -174,7 +166,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 				}
 			}
 			
-			SecurityManager.getInstance().addToken(token);
+			SecurityManager.getInstance().getTokens().add(token);
 			
 			System.out.printf("%nVerified token %n%n");
 			
