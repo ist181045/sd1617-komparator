@@ -62,71 +62,54 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 
+		SOAPMessage msg = smc.getMessage();
+		SOAPBody sb = null;
+
 		try {
-			SOAPMessage msg = smc.getMessage();
-			SOAPPart sp = msg.getSOAPPart();
-			SOAPEnvelope se = sp.getEnvelope();
-			SOAPBody body = se.getBody();
-
-			QName operation = (QName) smc.get(MessageContext.WSDL_OPERATION);
-			if (!operation.getLocalPart().equals(OPERATION_BUYCART)) {
-				return true; // Not what we're looking for
-			}
-
-			NodeList nodes = body.getFirstChild().getChildNodes();
-			for (int i = 0; i < nodes.getLength(); ++i) {
-				Node argument = nodes.item(i);
-				if (argument.getNodeName().equals(PARAM_CC_NUMBER)) {
-					String creditCard = argument.getTextContent();
-					byte[] result;
-
-					System.out.printf("%n" + (outbound ? "En" : "De")
-							+ "crypting credit card number%n%n");
-					if (outbound) {
-						result = encrypt(parseBase64Binary(creditCard));
-					} else {
-						result = decrypt(parseBase64Binary(creditCard));
-					}
-
-					if (result == null) {
-						throw new RuntimeException("Failed to"
-								+ (outbound ? "en" : "de")
-								+ "crypt credit card number");
-					}
-
-					argument.setTextContent(printBase64Binary(result));
-					msg.saveChanges();
-					return true;
-				}
-			}
-
-			// Safe to proceed
-			return true;
-		} catch (CertificateException ce) {
-			String error = "Error retrieving certificate: " + ce.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
-		} catch (KeyStoreException kse) {
-			String error = "Error loading keystore: " + kse.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
-		} catch (UnrecoverableKeyException uke) {
-			String error = "Couldn't recover key: " + uke.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
+			sb = msg.getSOAPPart().getEnvelope().getBody();
 		} catch (SOAPException soape) {
-			String error = "SOAP error: " + soape.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
-		} catch (FileNotFoundException fnfe) {
-			String error = "File not found: " + fnfe.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
-		} catch (IOException ioe) {
-			String error = "I/O error: " + ioe.getMessage();
-			System.err.println(error);
-			throw new RuntimeException(error);
+			throwRuntimeException(
+					"SOAP error retrieving envelope's body", soape);
 		}
+
+		QName operation = (QName) smc.get(MessageContext.WSDL_OPERATION);
+		if (!operation.getLocalPart().equals(OPERATION_BUYCART)) {
+			return true; // Not what we're looking for
+		}
+
+		NodeList nodes = sb.getFirstChild().getChildNodes();
+		for (int i = 0; i < nodes.getLength(); ++i) {
+			Node argument = nodes.item(i);
+			if (argument.getNodeName().equals(PARAM_CC_NUMBER)) {
+				String creditCard = argument.getTextContent();
+				byte[] result;
+
+				System.out.printf("%n" + (outbound ? "En" : "De")
+						+ "crypting credit card number%n%n");
+				if (outbound) {
+					result = encrypt(parseBase64Binary(creditCard));
+				} else {
+					result = decrypt(parseBase64Binary(creditCard));
+				}
+
+				if (result == null) {
+					throw new RuntimeException("Failed to"
+							+ (outbound ? "en" : "de")
+							+ "crypt credit card number");
+				}
+
+				argument.setTextContent(printBase64Binary(result));
+				try {
+					msg.saveChanges();
+				} catch (SOAPException soape) {
+					throwRuntimeException("SOAP message error", soape);
+				}
+
+				return true;
+			}
+		}
+
+		return true;
 	}
 
 	/** The handleFault method is invoked for fault message processing. */
@@ -144,26 +127,48 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 		// nothing to clean up
 	}
 
-	private byte[] encrypt(byte[] plainBytes)
-			throws IOException, CertificateException {
-		String sender = SecurityManager.getInstance().getDestination();
-		Certificate certificate =
-				CertUtil.getX509CertificateFromResource(sender + ".cer");
-		PublicKey key = CertUtil.getPublicKeyFromCertificate(certificate);
+	private byte[] encrypt(byte[] plainBytes) {
+		String destination = SecurityManager.getInstance().getDestination();
 
-		return CryptoUtil.asymCipher(key, plainBytes);
+		try {
+			Certificate certificate =
+                    CertUtil.getX509CertificateFromResource(destination + ".cer");
+			PublicKey key = CertUtil.getPublicKeyFromCertificate(certificate);
+
+			return CryptoUtil.asymCipher(key, plainBytes);
+		} catch (CertificateException ce) {
+			throwRuntimeException("Error retrieving certificate", ce);
+		} catch (IOException ioe) {
+			throwRuntimeException("I/O error", ioe);
+		}
+
+		return null; // never reached
 	}
 
-	private byte[] decrypt(byte[] encryptedBytes)
-			throws UnrecoverableKeyException, KeyStoreException,
-			FileNotFoundException {
+	private byte[] decrypt(byte[] encryptedBytes) {
 		String sender = SecurityManager.getInstance().getSender();
 		String password = SecurityManager.getInstance().getPassword();
-		KeyStore keyStore = CertUtil.readKeystoreFromResource(
-				sender + ".jks", password.toCharArray());
-		PrivateKey key = CertUtil.getPrivateKeyFromKeyStore(
-				sender.toLowerCase(), password.toCharArray(), keyStore);
 
-		return CryptoUtil.asymDecipher(key, encryptedBytes);
+		try {
+			KeyStore keyStore = CertUtil.readKeystoreFromResource(
+                    sender + ".jks", password.toCharArray());
+			PrivateKey key = CertUtil.getPrivateKeyFromKeyStore(
+                    sender.toLowerCase(), password.toCharArray(), keyStore);
+
+			return CryptoUtil.asymDecipher(key, encryptedBytes);
+		} catch (KeyStoreException kse) {
+			throwRuntimeException("Error loading keystore", kse);
+		} catch (UnrecoverableKeyException uke) {
+			throwRuntimeException("Couldn't recover key", uke);
+		}
+
+		return null; // never reached
+	}
+
+	private void throwRuntimeException(String msg, Exception e)
+			throws RuntimeException {
+		String error = msg + ": " + e.getMessage();
+		System.err.println(error);
+		throw new RuntimeException(error);
 	}
 }
