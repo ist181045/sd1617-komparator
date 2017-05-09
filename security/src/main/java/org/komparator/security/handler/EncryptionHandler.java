@@ -86,6 +86,12 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 						result = decrypt(parseBase64Binary(creditCard));
 					}
 
+					if (result == null) {
+						throw new RuntimeException("Failed to"
+								+ (outbound ? "en" : "de")
+								+ "crypt credit card number");
+					}
+
 					argument.setTextContent(printBase64Binary(result));
 					msg.saveChanges();
 					return true;
