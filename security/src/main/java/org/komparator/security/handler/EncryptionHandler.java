@@ -80,6 +80,8 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 					String creditCard = argument.getTextContent();
 					byte[] result;
 
+					System.out.printf("%n" + (outbound ? "En" : "De")
+							+ "crypting credit card number%n%n");
 					if (outbound) {
 						result = encrypt(parseBase64Binary(creditCard));
 					} else {
