@@ -22,23 +22,26 @@ import pt.ulisboa.tecnico.sdis.cert.CertUtil;
 public class CryptoUtilTest {
 
     // static fields
-    static final String CERTIFICATE = "example.cer";
+    private static final String CERTIFICATE = "example.cer";
 
-    static final String KEYSTORE = "example.jks";
-    static final String KEYSTORE_PASSWORD = "1nsecure";
+    private static final String KEYSTORE = "example.jks";
+    private static final String KEYSTORE_PASSWORD = "1nsecure";
 
-    static final String KEY_ALIAS = "example";
-    static final String KEY_PASSWORD = "ins3cur3";
+    private static final String KEY_ALIAS = "example";
+    private static final String KEY_PASSWORD = "ins3cur3";
 
-
-    static boolean outputFlag = CertUtil.outputFlag;
-    static PublicKey publicKey;
-    static PrivateKey privateKey;
+    private static boolean outputFlag = CertUtil.outputFlag;
+    private static PublicKey publicKey;
+    private static PrivateKey privateKey;
+    // members
+    private final String plainText = "Look at me, mah!";
+    private final byte[] plainBytes = plainText.getBytes();
 
     // one-time initialization and clean-up
     @BeforeClass
-    public static void oneTimeSetUp() throws IOException, CertificateException,
-            UnrecoverableKeyException, KeyStoreException {
+    public static void oneTimeSetUp()
+            throws IOException, CertificateException, UnrecoverableKeyException,
+            KeyStoreException {
         CertUtil.outputFlag = true; // Print some stuff
 
         Certificate cert = CertUtil.getX509CertificateFromResource(CERTIFICATE);
@@ -49,15 +52,16 @@ public class CryptoUtilTest {
                 KEY_PASSWORD.toCharArray());
     }
 
-    // members
-    final String plainText = "Look at me, mah!";
-    final byte[] plainBytes = plainText.getBytes();
+    @AfterClass
+    public static void oneTimeTearDown() {
+        CertUtil.outputFlag = outputFlag;
+    }
 
     // tests
     @Test
     public void testEncryptionWithPrivateKey() {
-        System.out.printf("Encrypting text using private key '%s' in keystore '%s'%n",
-                KEY_ALIAS, KEYSTORE);
+        System.out.printf("Encrypting text using private key '%s' in "
+                        + "keystore '%s'%n", KEY_ALIAS, KEYSTORE);
         System.out.println("Text: " + plainText);
         System.out.println("Bytes: " + printHexBinary(plainBytes));
 
@@ -79,8 +83,10 @@ public class CryptoUtilTest {
 
     @Test
     public void testEncryptionWithPublicKey() {
-        System.out.printf("Encrypting text using public key from X509 Certificate '%s'%n",
-                CERTIFICATE);
+        System.out
+                .printf("Encrypting text using public key from X509 "
+                                + "Certificate '%s'%n",
+                        CERTIFICATE);
         System.out.println("Text: " + plainText);
         System.out.println("Bytes: " + printHexBinary(plainBytes));
 
@@ -105,26 +111,22 @@ public class CryptoUtilTest {
         // Attempt encryption and decryption with wrong key pair (i.e. same key
         // for both cases)
 
-        System.out.println("Encrypting and decrypting with private key.. ");
+        System.err.close(); // Quiet
+        System.out.print("Encrypting and decrypting with private key.. ");
         {
             byte[] encrypted = CryptoUtil.asymCipher(privateKey, plainBytes);
             byte[] decrypted = CryptoUtil.asymDecipher(privateKey, encrypted);
             assertNull(decrypted);
         }
-        System.out.println("public OK");
+        System.out.println("OK");
 
-        System.out.println("Encrypting and decrypting with public key.. ");
+        System.out.print("Encrypting and decrypting with public key.. ");
         {
             byte[] encrypted = CryptoUtil.asymCipher(publicKey, plainBytes);
             byte[] decrypted = CryptoUtil.asymDecipher(publicKey, encrypted);
             assertNull(decrypted);
         }
-        System.out.println("private OK");
-    }
-
-    @AfterClass
-    public static void oneTimeTearDown() {
-        CertUtil.outputFlag = outputFlag;
+        System.out.println("OK");
     }
 
 }
