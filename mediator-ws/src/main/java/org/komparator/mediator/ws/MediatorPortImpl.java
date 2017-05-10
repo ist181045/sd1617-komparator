@@ -266,6 +266,7 @@ public class MediatorPortImpl implements MediatorPortType {
             srv.setId(srvId);
 
             shoppingHistory.put(datetime, srv);
+            endpointManager.getLifeProof().getMediatorClient().updateShopHistory(datetime.toString(), srv);
         }
 
         carts.remove(cartId);
@@ -404,6 +405,16 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public synchronized List<ShoppingResultView> shopHistory() {
         return new ArrayList<>(shoppingHistory.values());
+    }
+    
+    @Override
+    public void updateShopHistory(String index, ShoppingResultView item) {
+    	if(index == null || item == null) {
+    		return;
+    	}
+    	if(!endpointManager.getIsPrimary()) {
+    		shoppingHistory.put(LocalDateTime.parse(index), item);
+    	}
     }
 
     // View helpers ----------------------------------------------------------

@@ -59,9 +59,9 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
 			
 			<xs:element name="imAlive" type="tns:imAlive"/>
 			
-			<xs:element name="updateShopHistory" type="tns:shopHistoryResponse"/>
+			<xs:element name="updateShopHistory" type="tns:shopHistoryUpdateResponse"/>
 			
-			<xs:element name="updateCart" type="tns:cartView"/>
+			<!--xs:element name="updateCart" type="tns:cartView"/-->
 
             <xs:complexType name="listCarts">
                 <xs:sequence/>
@@ -180,6 +180,13 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
             <xs:complexType name="shopHistoryResponse">
                 <xs:sequence>
                     <xs:element name="shopResults" type="tns:shoppingResultView" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:complexType>
+			
+			<xs:complexType name="shopHistoryUpdateResponse">
+                <xs:sequence>
+					<xs:element name="index" type="xs:string" minOccurs="0" />
+                    <xs:element name="shopResults" type="tns:shoppingResultView" minOccurs="0" />
                 </xs:sequence>
             </xs:complexType>
 
@@ -323,9 +330,9 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
 	<message name="updateShopHistory">
         <part name="parameters" element="tns:updateShopHistory"/>
     </message>
-	<message name="updateCart">
+	<!--message name="updateCart">
         <part name="parameters" element="tns:updateCart"/>
-    </message>
+    </message-->
 	
 
     <!-- Port Type (Interface) -->
@@ -377,9 +384,9 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
 		<operation name="updateShopHistory">
 			<input wsam:Action="http://ws.mediator.komparator.org/Mediator/updateShopHistoryRequest" message="tns:updateShopHistory"/>
 		</operation>
-		<operation name="updateCart">
+		<!--operation name="updateCart">
 			<input wsam:Action="http://ws.mediator.komparator.org/Mediator/updateShopHistoryRequest" message="tns:updateCart"/>
-		</operation>
+		</operation-->
     </portType>
 
     <!-- SOAP/HTTP Binding -->
@@ -496,12 +503,12 @@ wsdl:service, wsdl:portType, wsdl:types and wsdl:binding below
                 <soap:body use="literal"/>
             </input>
         </operation>
-		<operation name="updateCart">
+		<!--operation name="updateCart">
             <soap:operation soapAction=""/>
             <input>
                 <soap:body use="literal"/>
             </input>
-        </operation>
+        </operation-->
     </binding>
 
     <!-- Service -->
