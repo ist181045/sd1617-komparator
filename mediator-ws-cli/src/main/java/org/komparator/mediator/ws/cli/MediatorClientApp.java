@@ -1,5 +1,7 @@
 package org.komparator.mediator.ws.cli;
 
+import org.komparator.mediator.ws.ShoppingResultView;
+
 public class MediatorClientApp {
 
     public static void main(String[] args) throws Exception {
@@ -35,9 +37,12 @@ public class MediatorClientApp {
         // the following remote invocations are just basic examples
         // the actual tests are made using JUnit
 
-        System.out.println("Invoke ping()...");
-        String result = client.ping("client");
-        System.out.println(result);
-
+        System.out.println("Invoke buyCart()...");
+        try {
+            ShoppingResultView srv = client.buyCart("client", "4012888888881881");
+            System.out.println(srv.getResult());
+        } catch (Exception e) {
+            System.err.println("Ignoring exception: " + e);
+        }
     }
 }
