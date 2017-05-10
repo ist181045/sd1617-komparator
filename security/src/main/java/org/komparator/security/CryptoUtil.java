@@ -45,8 +45,7 @@ public class CryptoUtil {
                     esb.append("encrypting ");
                     break;
             }
-            esb.append(
-                    String.format("bytes, caught %s: %s%n", e, e.getMessage()));
+            esb.append(String.format("bytes, caught %s%n", e));
 
             System.err.println(esb);
         }
