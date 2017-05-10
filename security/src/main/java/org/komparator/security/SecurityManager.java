@@ -17,7 +17,7 @@ public class SecurityManager {
     private static final int MSG_TIMEOUT = 3;
     private static final String KEY_PASSWORD = "M6cggAUT";
 
-    private static SecurityManager theManager = null;
+    private static SecurityManager theManager;
 
     private String sender;
     private String destination;
@@ -31,7 +31,7 @@ public class SecurityManager {
 
     public static SecurityManager getInstance() {
         if (theManager == null)
-            return new SecurityManager();
+            theManager = new SecurityManager();
         return theManager;
     }
 
@@ -83,10 +83,10 @@ public class SecurityManager {
         try {
             KeyStore keyStore = CertUtil.readKeystoreFromResource(
                     entity + ".jks",
-                    KEY_PASSWORD.toCharArray());
+                    getPassword().toCharArray());
 
             return CertUtil.getPrivateKeyFromKeyStore(entity.toLowerCase(),
-                    KEY_PASSWORD.toCharArray(), keyStore);
+                    getPassword().toCharArray(), keyStore);
         } catch (KeyStoreException kse) {
             System.err.println("Error loading keystore: " + kse.getMessage());
         } catch (UnrecoverableKeyException uke) {
