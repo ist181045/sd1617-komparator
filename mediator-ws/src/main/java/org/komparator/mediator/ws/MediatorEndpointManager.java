@@ -1,6 +1,7 @@
 package org.komparator.mediator.ws;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 
 import javax.xml.ws.Endpoint;
 
@@ -31,7 +32,7 @@ public class MediatorEndpointManager {
     /**
      * Web Service number
      */
-    private String wsI = null;
+    private boolean isPrimary = false;
 
     /**
      * Port implementation
@@ -52,15 +53,25 @@ public class MediatorEndpointManager {
      * output option
      **/
     private boolean verbose = true;
+    
+    /**
+     * Keep last timeStamp
+     **/
+    private LocalDateTime imAliveHistory = null;
+    
+    /**
+     * LifeProof class
+     **/
+    private LifeProof lifeProof = null;
 
     /**
      * constructor with provided UDDI location, WS name, and WS URL
      */
-    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL, String wsI) {
+    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL, int wsI) {
         this.uddiURL = uddiURL;
         this.wsName = wsName;
         this.wsURL = wsURL;
-        this.wsI = wsI;
+        this.isPrimary = wsI == 1;
 
         SecurityManager.getInstance().setSender(wsName);
         portImpl = new MediatorPortImpl(this);
@@ -89,8 +100,12 @@ public class MediatorEndpointManager {
     /**
      * Get Web Service number
      */
-    public String getWsI() {
-        return wsI;
+    public boolean getIsPrimary() {
+        return isPrimary;
+    }
+    
+    public void setIsPrimary(boolean b) {
+    	isPrimary = b;
     }
 
     
@@ -107,6 +122,22 @@ public class MediatorEndpointManager {
     UDDINaming getUddiNaming() {
         return uddiNaming;
     }
+    
+    public LocalDateTime getImAliveHistory() {
+		return imAliveHistory;
+	}
+
+	public void setImAliveHistory(LocalDateTime imAliveHistory) {
+		this.imAliveHistory = imAliveHistory;
+	}
+	
+	public LifeProof getLifeProof() {
+		return lifeProof;
+	}
+
+	public void setLifeProof(LifeProof lifeProof) {
+		this.lifeProof = lifeProof;
+	}
 
     public boolean isVerbose() {
         return verbose;
@@ -176,7 +207,7 @@ public class MediatorEndpointManager {
         try {
             // publish to UDDI
             if (uddiURL != null) {
-            	if (wsI != null && wsI.equals("1")){
+            	if (isPrimary){
 	                if (verbose) {
 	                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
 	                }
@@ -213,4 +244,7 @@ public class MediatorEndpointManager {
         }
     }
 
+	
+
+	
 }

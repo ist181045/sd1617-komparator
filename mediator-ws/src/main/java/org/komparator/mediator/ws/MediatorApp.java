@@ -14,7 +14,7 @@ public class MediatorApp {
 		String uddiURL = null;
 		String wsName = null;
 		String wsURL = null;
-		String wsI = null;
+		int wsI = 0;
 
 		// Create server implementation object, according to options
 		MediatorEndpointManager endpoint = null;
@@ -26,9 +26,9 @@ public class MediatorApp {
 			wsName = args[1];
 			wsURL = args[2];
 			if(args[3] != null)
-				wsI = args[3];
+				wsI = Integer.parseInt(args[3]);
 			else 
-				wsI = String.valueOf(wsURL.charAt(wsURL.indexOf(":", wsURL.indexOf(":") + 1) + 4));
+				wsI = Integer.parseInt(String.valueOf(wsURL.charAt(wsURL.indexOf(":", wsURL.indexOf(":") + 1) + 4)));
 			
 			endpoint = new MediatorEndpointManager(uddiURL, wsName, wsURL, wsI);
 			
@@ -37,12 +37,14 @@ public class MediatorApp {
 
 		try {
 			endpoint.start();
-			
 			Timer timer = new Timer(/*isDaemon*/ true);
+			LifeProof lifeProof = new LifeProof(wsI, endpoint);
+			endpoint.setLifeProof(lifeProof);
 			
-			LifeProof lifeProof = new LifeProof(wsI);
+			if (wsI == 2) 
+				lifeProof.getMediatorClient().imAlive();
 			
-			timer.schedule(lifeProof, /*delay*/ 0 * 1000, /*period*/ 5 * 1000);
+			timer.schedule(lifeProof, /*delay*/ 0 * 1000, /*period*/ LifeProof.imAliveInterval * 1000);
 			
 			
 			endpoint.awaitConnections();
