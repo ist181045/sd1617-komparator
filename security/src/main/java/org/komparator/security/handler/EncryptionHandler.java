@@ -73,7 +73,7 @@ public class EncryptionHandler implements SOAPHandler<SOAPMessageContext> {
 				SecurityManager manager = SecurityManager.getInstance();
 				if (outbound) {
 					result = CryptoUtil.asymCipher(
-							manager.getPublicKey(manager.getDestination()),
+							manager.getPublicKey(manager.getReceiver()),
 							parseBase64Binary(item.getTextContent()));
 				} else {
 					result = CryptoUtil.asymDecipher(

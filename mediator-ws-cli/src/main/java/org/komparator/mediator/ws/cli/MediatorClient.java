@@ -77,7 +77,7 @@ public class MediatorClient implements MediatorPortType {
         this.uddiURL = uddiURL;
         this.wsName = wsName;
         SecurityManager.getInstance().setSender("MediatorClient");
-        SecurityManager.getInstance().setDestination(wsName);
+        SecurityManager.getInstance().setReceiver(wsName);
         uddiLookup();
         createStub();
     }

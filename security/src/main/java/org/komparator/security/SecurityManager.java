@@ -14,20 +14,23 @@ import java.util.Set;
 import pt.ulisboa.tecnico.sdis.cert.CertUtil;
 
 public class SecurityManager {
+    private static final String UDDI_GROUPID = "A58".toLowerCase();
+    private static final String UDDI_PASSWORD = "M6cggAUT";
+    private static final String UDDI_URL =
+            "http://" + UDDI_GROUPID + ":" + UDDI_PASSWORD
+                      + "@uddi.sd.rnl.tecnico.ulisboa.pt/9090";
+
+    private static final String CA_URL =
+            "http://sec.sd.rnl.tecnico.ulisboa.pt:8081/ca";
+
     private static final int MSG_TIMEOUT = 3;
-    private static final String KEY_PASSWORD = "M6cggAUT";
 
     private static SecurityManager theManager;
 
     private String sender;
-    private String destination;
-    private Set<String> tokens;
 
-    private SecurityManager() {
-        this.sender = null;
-        this.destination = null;
-        this.tokens = new HashSet<>();
-    }
+    private String receiver;
+    private Set<String> tokens;
 
     public static SecurityManager getInstance() {
         if (theManager == null)
@@ -39,12 +42,34 @@ public class SecurityManager {
         return MSG_TIMEOUT;
     }
 
-    public String getDestination() {
-    	return destination;
+    public static String getUddiGroupid() {
+        return UDDI_GROUPID;
     }
 
-    public void setDestination(String destination) {
-    	this.destination = destination;
+    public static String getUddiPassword() {
+        return UDDI_PASSWORD;
+    }
+
+    public static String getUddiUrl() {
+        return UDDI_URL;
+    }
+
+    public static String getCaUrl() {
+        return CA_URL;
+    }
+
+    private SecurityManager() {
+        this.sender = null;
+        this.receiver = null;
+        this.tokens = new HashSet<>();
+    }
+
+    public String getReceiver() {
+    	return receiver;
+    }
+
+    public void setReceiver(String receiver) {
+    	this.receiver = receiver;
     }
 
     public String getSender() {
@@ -56,11 +81,15 @@ public class SecurityManager {
     }
 
     public String getPassword() {
-    	return KEY_PASSWORD;
+    	return UDDI_PASSWORD;
     }
 
     public Set<String> getTokens() {
     	return tokens;
+    }
+
+    public synchronized boolean addToken(String token) {
+        return tokens.add(token);
     }
 
     public PublicKey getPublicKey(String entity) {
