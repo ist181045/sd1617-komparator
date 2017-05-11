@@ -5,6 +5,8 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 
 import java.util.List;
 import java.util.Map;
+
+import org.komparator.mediator.ws.CartItemView;
 import org.komparator.mediator.ws.CartView;
 import org.komparator.mediator.ws.EmptyCart_Exception;
 import org.komparator.mediator.ws.InvalidCartId_Exception;
@@ -191,6 +193,11 @@ public class MediatorClient implements MediatorPortType {
 	@Override
 	public void updateShopHistory(String index, ShoppingResultView history) {
 		port.updateShopHistory(index, history);
+	}
+	
+	@Override
+	public void updateCart(String cartID, List<CartItemView> items) {
+		port.updateCart(cartID, items);
 	}
 
 }

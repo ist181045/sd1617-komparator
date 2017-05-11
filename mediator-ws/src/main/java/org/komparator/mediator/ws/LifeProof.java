@@ -23,6 +23,10 @@ public class LifeProof extends TimerTask{
 	public void setSecondaryExists(boolean b) {
 		secondaryExists = b;
 	}
+	
+	public boolean getSecondaryExists() {
+		return secondaryExists;
+	}
 
     public LifeProof(int mediatorID, MediatorEndpointManager endpoint) throws MediatorClientException {
         this.isPrimary = mediatorID == 1;

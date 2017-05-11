@@ -266,7 +266,8 @@ public class MediatorPortImpl implements MediatorPortType {
             srv.setId(srvId);
 
             shoppingHistory.put(datetime, srv);
-            endpointManager.getLifeProof().getMediatorClient().updateShopHistory(datetime.toString(), srv);
+            if (endpointManager.getLifeProof().getSecondaryExists())
+            	endpointManager.getLifeProof().getMediatorClient().updateShopHistory(datetime.toString(), srv);
         }
 
         carts.remove(cartId);
@@ -358,10 +359,13 @@ public class MediatorPortImpl implements MediatorPortType {
                 cv.getItems().add(civ);
 
                 carts.put(cartId, cv);
+                if (endpointManager.getLifeProof().getSecondaryExists())
+                	endpointManager.getLifeProof().getMediatorClient().updateCart(cartId, cv.getItems());
             }
         }
     }
 
+    @Override
     public String ping(String arg0) {
         if (arg0 == null || arg0.trim().length() == 0 ||
                 arg0.trim().matches(".*[\\r\\n\\t]+.*")) {
@@ -396,11 +400,14 @@ public class MediatorPortImpl implements MediatorPortType {
     public void imAlive() {
     	if (endpointManager.getIsPrimary()) {
     		endpointManager.getLifeProof().setSecondaryExists(true);
+    		updateAllCarts();
+    		
     	}
     	else {
     		endpointManager.setImAliveHistory(LocalDateTime.now());
     	}
     }
+    
 
     @Override
     public synchronized List<ShoppingResultView> shopHistory() {
@@ -415,6 +422,18 @@ public class MediatorPortImpl implements MediatorPortType {
     	if(!endpointManager.getIsPrimary()) {
     		shoppingHistory.put(LocalDateTime.parse(index), item);
     	}
+    }
+    
+    @Override
+    public void updateCart(String cartID, List<CartItemView> items) {
+    	 if (!endpointManager.getIsPrimary()) {
+    		 CartView cv = new CartView();
+    		 cv.setCartId(cartID);
+    		 for (CartItemView civ : items) {
+    			 cv.getItems().add(civ);
+    		 }
+    		 carts.put(cartID, cv);
+    	 }
     }
 
     // View helpers ----------------------------------------------------------
@@ -523,5 +542,13 @@ public class MediatorPortImpl implements MediatorPortType {
 
             return suppliers;
         }
+    }
+    
+    private void updateAllCarts() {
+    	if (endpointManager.getLifeProof().getSecondaryExists()) {
+    		for (CartView cv : carts.values()) {
+                endpointManager.getLifeProof().getMediatorClient().updateCart(cv.getCartId(), cv.getItems());
+    		}
+    	}
     }
 }
