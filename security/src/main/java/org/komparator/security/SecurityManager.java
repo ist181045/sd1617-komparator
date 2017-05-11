@@ -20,12 +20,13 @@ import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
 import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
 
 public class SecurityManager {
-    private static final String UDDI_GROUPID = "A58".toLowerCase();
+    private static final String UDDI_GROUP_ID = "A58".toLowerCase();
     private static final String UDDI_PASSWORD = "M6cggAUT";
     private static final String UDDI_URL =
-            "http://" + UDDI_GROUPID + ":" + UDDI_PASSWORD
+            "http://" + UDDI_GROUP_ID + ":" + UDDI_PASSWORD
                       + "@uddi.sd.rnl.tecnico.ulisboa.pt/9090";
 
+    private static final String CA_CERT = "ca.cer";
     private static final String CA_URL =
             "http://sec.sd.rnl.tecnico.ulisboa.pt:8081/ca";
 
@@ -48,8 +49,8 @@ public class SecurityManager {
         return MSG_TIMEOUT;
     }
 
-    public static String getUddiGroupid() {
-        return UDDI_GROUPID;
+    public static String getUddiGroupId() {
+        return UDDI_GROUP_ID;
     }
 
     public static String getUddiPassword() {
@@ -60,8 +61,57 @@ public class SecurityManager {
         return UDDI_URL;
     }
 
+    public static String getCaCert() {
+        return CA_CERT;
+    }
+
     public static String getCaUrl() {
         return CA_URL;
+    }
+
+    public static PublicKey getPublicKey(String entity) {
+        try {
+            CAClient cac = new CAClient(getUddiUrl(), entity);
+            String certString = cac.getCertificate(entity);
+
+            byte[] bytes = certString.getBytes(StandardCharsets.UTF_8);
+            InputStream in = new ByteArrayInputStream(bytes);
+            CertificateFactory certFactory =
+                    CertificateFactory.getInstance("X.509");
+            Certificate cert = certFactory.generateCertificate(in);
+
+            if(CertUtil.verifySignedCertificate(
+                    cert, CertUtil.getX509CertificateFromResource(CA_CERT))) {
+                return CertUtil.getPublicKeyFromCertificate(cert);
+            }
+        } catch (IOException ioe) {
+            System.err.println("I/O error: " + ioe.getMessage());
+        } catch (CertificateException ce) {
+            System.err.println("Error retrieving certificate: "
+                    + ce.getMessage());
+        } catch (CAClientException cace) {
+            System.err.println("Error instantiating CA client: "
+                    + cace.getMessage());
+        }
+
+        return null;
+    }
+
+    public static PrivateKey getPrivateKey(String entity) {
+        try {
+            KeyStore keyStore = CertUtil.readKeystoreFromResource(
+                    entity + ".jks",
+                    getUddiPassword().toCharArray());
+
+            return CertUtil.getPrivateKeyFromKeyStore(entity.toLowerCase(),
+                    getUddiPassword().toCharArray(), keyStore);
+        } catch (KeyStoreException kse) {
+            System.err.println("Error loading keystore: " + kse.getMessage());
+        } catch (UnrecoverableKeyException uke) {
+            System.err.println("Couldn't recover key: " + uke.getMessage());
+        }
+
+        return null;
     }
 
     private SecurityManager() {
@@ -86,60 +136,11 @@ public class SecurityManager {
     	this.sender = sender;
     }
 
-    public String getPassword() {
-    	return UDDI_PASSWORD;
-    }
-
     public Set<String> getTokens() {
     	return tokens;
     }
 
     public synchronized boolean addToken(String token) {
         return tokens.add(token);
-    }
-
-    public PublicKey getPublicKey(String entity) {
-        try {
-            CAClient cac = new CAClient(getUddiUrl(), entity);
-            String certString = cac.getCertificate(entity);
-
-            byte[] bytes = certString.getBytes(StandardCharsets.UTF_8);
-            InputStream in = new ByteArrayInputStream(bytes);
-            CertificateFactory certFactory =
-                    CertificateFactory.getInstance("X.509");
-            Certificate cert = certFactory.generateCertificate(in);
-
-            if(CertUtil.verifySignedCertificate(
-                    cert, CertUtil.getX509CertificateFromResource("ca.cer"))) {
-                return CertUtil.getPublicKeyFromCertificate(cert);
-            }
-        } catch (IOException ioe) {
-            System.err.println("I/O error: " + ioe.getMessage());
-        } catch (CertificateException ce) {
-            System.err.println("Error retrieving certificate: "
-                    + ce.getMessage());
-        } catch (CAClientException cace) {
-            System.err.println("Error instantiating CA client: "
-                    + cace.getMessage());
-        }
-
-        return null;
-    }
-
-    public PrivateKey getPrivateKey(String entity) {
-        try {
-            KeyStore keyStore = CertUtil.readKeystoreFromResource(
-                    entity + ".jks",
-                    getPassword().toCharArray());
-
-            return CertUtil.getPrivateKeyFromKeyStore(entity.toLowerCase(),
-                    getPassword().toCharArray(), keyStore);
-        } catch (KeyStoreException kse) {
-            System.err.println("Error loading keystore: " + kse.getMessage());
-        } catch (UnrecoverableKeyException uke) {
-            System.err.println("Couldn't recover key: " + uke.getMessage());
-        }
-
-        return null;
     }
 }
