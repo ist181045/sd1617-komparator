@@ -1,6 +1,9 @@
 package org.komparator.security;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.PrivateKey;
@@ -8,10 +11,13 @@ import java.security.PublicKey;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.util.HashSet;
 import java.util.Set;
 
 import pt.ulisboa.tecnico.sdis.cert.CertUtil;
+import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
+import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
 
 public class SecurityManager {
     private static final String UDDI_GROUPID = "A58".toLowerCase();
@@ -94,15 +100,27 @@ public class SecurityManager {
 
     public PublicKey getPublicKey(String entity) {
         try {
-            Certificate cert = CertUtil.getX509CertificateFromResource(
-                    entity + ".cer");
+            CAClient cac = new CAClient(getUddiUrl(), entity);
+            String certString = cac.getCertificate(entity);
 
-            return CertUtil.getPublicKeyFromCertificate(cert);
+            byte[] bytes = certString.getBytes(StandardCharsets.UTF_8);
+            InputStream in = new ByteArrayInputStream(bytes);
+            CertificateFactory certFactory =
+                    CertificateFactory.getInstance("X.509");
+            Certificate cert = certFactory.generateCertificate(in);
+
+            if(CertUtil.verifySignedCertificate(
+                    cert, CertUtil.getX509CertificateFromResource("ca.cer"))) {
+                return CertUtil.getPublicKeyFromCertificate(cert);
+            }
         } catch (IOException ioe) {
             System.err.println("I/O error: " + ioe.getMessage());
         } catch (CertificateException ce) {
             System.err.println("Error retrieving certificate: "
                     + ce.getMessage());
+        } catch (CAClientException cace) {
+            System.err.println("Error instantiating CA client: "
+                    + cace.getMessage());
         }
 
         return null;
