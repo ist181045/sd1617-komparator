@@ -20,7 +20,7 @@ import pt.ulisboa.tecnico.sdis.ws.cli.CAClient;
 import pt.ulisboa.tecnico.sdis.ws.cli.CAClientException;
 
 public class SecurityManager {
-    private static final String UDDI_GROUP_ID = "A58".toLowerCase();
+    private static final String UDDI_GROUP_ID = "a58";
     private static final String UDDI_PASSWORD = "M6cggAUT";
     private static final String UDDI_URL =
             "http://" + UDDI_GROUP_ID + ":" + UDDI_PASSWORD
