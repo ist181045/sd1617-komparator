@@ -102,7 +102,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 			    random.nextBytes(bytes);
 			    token = printBase64Binary(bytes);
 			}
-			while (SecurityManager.getInstance().getTokens().contains(token));
+			while (!SecurityManager.getInstance().addToken(token));
 			
 			element.addTextNode(token);
 			
