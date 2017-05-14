@@ -116,7 +116,7 @@ public class TokenizerHandler implements SOAPHandler<SOAPMessageContext> {
 					+ " token "
 					+ (outbound ? " to message" : "");
 			System.err.printf("%n%s: %s%n%n", error, soape.getMessage());
-			throw new RuntimeException(error);
+			throw new RuntimeException(error, soape);
 		}
 
 		return true;
