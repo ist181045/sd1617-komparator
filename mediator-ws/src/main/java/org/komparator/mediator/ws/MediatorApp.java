@@ -37,19 +37,20 @@ public class MediatorApp {
 
 		try {
 			endpoint.start();
-			Timer timer = new Timer(/*isDaemon*/ true);
+			Timer timer = new Timer(true);
 			LifeProof lifeProof = new LifeProof(wsI, endpoint);
 			endpoint.setLifeProof(lifeProof);
 			
 			if (wsI == 2) 
 				lifeProof.getMediatorClient().imAlive();
 			
-			timer.schedule(lifeProof, /*delay*/ 0 * 1000, /*period*/ LifeProof.imAliveInterval * 1000);
+			timer.schedule(lifeProof, 0, LifeProof.imAliveInterval * 1000);
 			
 			
 			endpoint.awaitConnections();
 		} finally {
 			endpoint.stop();
+			System.exit(0);
 		}
 
 	}
