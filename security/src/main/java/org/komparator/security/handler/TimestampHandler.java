@@ -128,10 +128,6 @@ public class TimestampHandler implements SOAPHandler<SOAPMessageContext> {
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		/*if (outbound)
-			addTimestamp(smc);
-		else
-			checkTimestamp(smc);*/
 		return true;
 	}
 
