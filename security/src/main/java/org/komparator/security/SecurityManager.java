@@ -35,8 +35,8 @@ public class SecurityManager {
     private static SecurityManager theManager;
 
     private String sender;
-
     private String receiver;
+
     private Set<String> tokens;
 
     public static SecurityManager getInstance() {
