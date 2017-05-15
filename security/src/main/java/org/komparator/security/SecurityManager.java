@@ -71,7 +71,7 @@ public class SecurityManager {
 
     public static PublicKey getPublicKey(String entity) {
         try {
-            CAClient cac = new CAClient(getUddiUrl(), entity);
+            CAClient cac = new CAClient(getCaUrl());
             String certString = cac.getCertificate(entity);
 
             byte[] bytes = certString.getBytes(StandardCharsets.UTF_8);
