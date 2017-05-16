@@ -26,6 +26,8 @@
         <ws.url>http://${ws.host}:${ws.port}/mediator-ws/endpoint</ws.url>
 
         <ws.id>1</ws.id>
+        <ws.connect>5</ws.connect>
+        <ws.receive>8</ws.receive>
 
         <!-- WSDL Name & Location -->
         <wsdl.directory>${basedir}/../mediator-ws/src/main/resources</wsdl.directory>
@@ -144,6 +146,8 @@
                     <arguments>
                         <argument>${uddi.url}</argument>
                         <argument>${ws.name}</argument>
+                        <argument>${ws.connect}</argument>
+                        <argument>${ws.receive}</argument>
                     </arguments>
                 </configuration>
             </plugin>

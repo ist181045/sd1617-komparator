@@ -10,38 +10,40 @@ public class MediatorClientApp {
                     + " wsURL OR uddiURL wsName");
             return;
         }
-        String uddiURL = null;
+
+        String uddiUrl = null;
         String wsName = null;
-        String wsURL = null;
+        String wsUrl = null;
+
+        int connectTimeout = 3;
+        int receiveTimeout = 5;
+
         if (args.length == 1) {
-            wsURL = args[0];
+            wsUrl = args[0];
         } else if (args.length >= 2) {
-            uddiURL = args[0];
+            uddiUrl = args[0];
             wsName = args[1];
+            if (args.length > 2)
+                connectTimeout = Integer.parseInt(args[2]);
+            if (args.length > 3)
+                receiveTimeout = Integer.parseInt(args[3]);
         }
 
         // Create client
         MediatorClient client = null;
 
-        if (wsURL != null) {
-            System.out.printf("Creating client for server at %s%n", wsURL);
-            client = new MediatorClient(wsURL);
-        } else if (uddiURL != null) {
-            System.out.printf("Creating client using UDDI at %s for server with name %s%n",
-                uddiURL, wsName);
-            client = new MediatorClient(uddiURL, wsName);
+        if (wsUrl != null) {
+            System.out.printf("Creating client for server at %s%n", wsUrl);
+            client = new MediatorClient(wsUrl);
+        } else if (uddiUrl != null) {
+            System.out.printf("Creating client using UDDI at %s for server "
+                    + "with name %s%n", uddiUrl, wsName);
+            client = new MediatorClient(uddiUrl, wsName,
+                    connectTimeout, receiveTimeout);
         }
         
-        //client = new MediatorClient(uddiURL, wsName, connectTimeout[seconds], receiveTimeout[seconds]);
-
-        // the following remote invocations are just basic examples
-        // the actual tests are made using JUnit
-
         System.out.println("Invoke ping()...");
         String result = client.ping("client");
         System.out.println(result);
-
-        
-        
     }
 }
