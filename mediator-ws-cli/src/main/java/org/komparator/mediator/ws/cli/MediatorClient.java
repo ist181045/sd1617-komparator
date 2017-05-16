@@ -3,6 +3,7 @@ package org.komparator.mediator.ws.cli;
 import javax.xml.ws.BindingProvider;
 import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -81,7 +82,20 @@ public class MediatorClient implements MediatorPortType {
         uddiLookup();
         createStub();
     }
-
+    
+    /**
+     * constructor with provided UDDI location, name and timeouts
+     */
+    public MediatorClient(String uddiURL, String wsName, int connectTimeout, int receiveTimeout) throws MediatorClientException {
+        this.uddiURL = uddiURL;
+        this.wsName = wsName;
+        SecurityManager.getInstance().setSender("MediatorClient");
+        SecurityManager.getInstance().setReceiver(wsName);
+        uddiLookup();
+        createStub();
+        setTimeout(connectTimeout, receiveTimeout);
+    }
+    
     public String getWsURL() {
         return wsURL;
     }
@@ -138,6 +152,39 @@ public class MediatorClient implements MediatorPortType {
                     .getRequestContext();
             requestContext.put(ENDPOINT_ADDRESS_PROPERTY, wsURL);
         }
+    }
+    
+    /**
+     * Setup connect and receive timeouts
+     */
+    private void setTimeout(int connectTimeout, int receiveTimeout) {
+    	
+    	BindingProvider bindingProvider = (BindingProvider) port;
+        Map<String, Object> requestContext = bindingProvider
+                .getRequestContext();
+       
+        final List<String> CONN_TIME_PROPS = new ArrayList<String>();
+        CONN_TIME_PROPS.add("com.sun.xml.ws.connect.timeout");
+        CONN_TIME_PROPS.add("com.sun.xml.internal.ws.connect.timeout");
+        CONN_TIME_PROPS.add("javax.xml.ws.client.connectionTimeout");
+        
+        for (String propName : CONN_TIME_PROPS)
+            requestContext.put(propName, connectTimeout*1000);
+        
+        if (verbose)
+        	System.out.printf("Set connect timeout to %d second(s)%n", connectTimeout);
+        
+        final List<String> RECV_TIME_PROPS = new ArrayList<String>();
+        RECV_TIME_PROPS.add("com.sun.xml.ws.request.timeout");
+        RECV_TIME_PROPS.add("com.sun.xml.internal.ws.request.timeout");
+        RECV_TIME_PROPS.add("javax.xml.ws.client.receiveTimeout");
+        
+        for (String propName : RECV_TIME_PROPS)
+            requestContext.put(propName, receiveTimeout*1000);
+        
+        if (verbose)
+        	System.out.printf("Set connect timeout to %d second(s)%n", receiveTimeout);
+        
     }
 
 
