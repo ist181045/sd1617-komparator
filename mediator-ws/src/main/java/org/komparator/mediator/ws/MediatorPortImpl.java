@@ -397,7 +397,7 @@ public class MediatorPortImpl implements MediatorPortType {
             return "Error occurred: " + me.getMessage();
         }
 
-        if (suppliers != null) {
+        if (suppliers != null && suppliers.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (SupplierClient supplier : suppliers) {
                 sb.append(String.format("Response from %s: ",
