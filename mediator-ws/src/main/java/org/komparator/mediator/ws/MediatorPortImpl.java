@@ -1,5 +1,6 @@
 package org.komparator.mediator.ws;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -14,6 +15,7 @@ import java.util.concurrent.ConcurrentMap;
 import javax.jws.HandlerChain;
 import javax.jws.WebService;
 
+import org.komparator.mediator.ws.cli.MediatorClient;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadQuantity_Exception;
 import org.komparator.supplier.ws.BadText_Exception;
@@ -266,8 +268,12 @@ public class MediatorPortImpl implements MediatorPortType {
             srv.setId(srvId);
 
             shoppingHistory.put(datetime, srv);
-            if (endpointManager.getLifeProof().getSecondaryExists())
-            	endpointManager.getLifeProof().getMediatorClient().updateShopHistory(datetime.toString(), srv);
+
+            LifeProof lifeProof = endpointManager.getLifeProof();
+            if (lifeProof.secondaryExists()) {
+                MediatorClient client = lifeProof.getMediatorClient();
+                client.updateShopHistory(datetime.toString(), srv);
+            }
         }
 
         carts.remove(cartId);
@@ -359,8 +365,12 @@ public class MediatorPortImpl implements MediatorPortType {
                 cv.getItems().add(civ);
 
                 carts.put(cartId, cv);
-                if (endpointManager.getLifeProof().getSecondaryExists())
-                	endpointManager.getLifeProof().getMediatorClient().updateCart(cartId, cv.getItems());
+
+                LifeProof lifeProof = endpointManager.getLifeProof();
+                if (lifeProof.secondaryExists()) {
+                    MediatorClient client = lifeProof.getMediatorClient();
+                    client.updateCart(cartId, cv.getItems());
+                }
             }
         }
     }
@@ -398,13 +408,13 @@ public class MediatorPortImpl implements MediatorPortType {
     
     @Override
     public void imAlive() {
-    	if (endpointManager.getIsPrimary()) {
-    		endpointManager.getLifeProof().setSecondaryExists(true);
+        LifeProof lifeProof = endpointManager.getLifeProof();
+
+        if (lifeProof.isPrimary()) {
+    		lifeProof.setSecondaryExists(true);
     		updateAllCarts();
-    		
-    	}
-    	else {
-    		endpointManager.setImAliveHistory(LocalDateTime.now());
+    	} else {
+    		lifeProof.setLastImAlive(Instant.now());
     	}
     }
     
@@ -419,19 +429,22 @@ public class MediatorPortImpl implements MediatorPortType {
     	if(index == null || item == null) {
     		return;
     	}
-    	if(!endpointManager.getIsPrimary()) {
+
+    	if(!endpointManager.getLifeProof().isPrimary()) {
     		shoppingHistory.put(LocalDateTime.parse(index), item);
     	}
     }
     
     @Override
     public void updateCart(String cartID, List<CartItemView> items) {
-    	 if (!endpointManager.getIsPrimary()) {
+    	 if (!endpointManager.getLifeProof().isPrimary()) {
     		 CartView cv = new CartView();
-    		 cv.setCartId(cartID);
+             cv.setCartId(cartID);
+
     		 for (CartItemView civ : items) {
     			 cv.getItems().add(civ);
     		 }
+
     		 carts.put(cartID, cv);
     	 }
     }
@@ -545,9 +558,12 @@ public class MediatorPortImpl implements MediatorPortType {
     }
     
     private void updateAllCarts() {
-    	if (endpointManager.getLifeProof().getSecondaryExists()) {
+        LifeProof lifeProof = endpointManager.getLifeProof();
+
+        if (lifeProof.secondaryExists()) {
     		for (CartView cv : carts.values()) {
-                endpointManager.getLifeProof().getMediatorClient().updateCart(cv.getCartId(), cv.getItems());
+                MediatorClient client = lifeProof.getMediatorClient();
+                client.updateCart(cv.getCartId(), cv.getItems());
     		}
     	}
     }

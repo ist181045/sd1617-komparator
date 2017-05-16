@@ -1,7 +1,6 @@
 package org.komparator.mediator.ws;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 
 import javax.xml.ws.Endpoint;
 
@@ -28,11 +27,6 @@ public class MediatorEndpointManager {
      * Web Service location to publish
      */
     private String wsURL = null;
-    
-    /**
-     * Web Service number
-     */
-    private boolean isPrimary = false;
 
     /**
      * Port implementation
@@ -55,11 +49,6 @@ public class MediatorEndpointManager {
     private boolean verbose = true;
     
     /**
-     * Keep last timeStamp
-     **/
-    private LocalDateTime imAliveHistory = null;
-    
-    /**
      * LifeProof class
      **/
     private LifeProof lifeProof = null;
@@ -67,11 +56,10 @@ public class MediatorEndpointManager {
     /**
      * constructor with provided UDDI location, WS name, and WS URL
      */
-    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL, int wsI) {
+    public MediatorEndpointManager(String uddiURL, String wsName, String wsURL) {
         this.uddiURL = uddiURL;
         this.wsName = wsName;
         this.wsURL = wsURL;
-        this.isPrimary = wsI == 1;
 
         SecurityManager.getInstance().setSender(wsName);
         portImpl = new MediatorPortImpl(this);
@@ -96,17 +84,6 @@ public class MediatorEndpointManager {
     public String getWsName() {
         return wsName;
     }
-    
-    /**
-     * Get Web Service number
-     */
-    public boolean getIsPrimary() {
-        return isPrimary;
-    }
-    
-    public void setIsPrimary(boolean b) {
-    	isPrimary = b;
-    }
 
     
     /**
@@ -115,21 +92,6 @@ public class MediatorEndpointManager {
     public MediatorPortType getPort() {
         return portImpl;
     }
-
-    /**
-     * Get UDDI Naming instance for contacting UDDI server
-     */
-    UDDINaming getUddiNaming() {
-        return uddiNaming;
-    }
-    
-    public LocalDateTime getImAliveHistory() {
-		return imAliveHistory;
-	}
-
-	public void setImAliveHistory(LocalDateTime imAliveHistory) {
-		this.imAliveHistory = imAliveHistory;
-	}
 	
 	public LifeProof getLifeProof() {
 		return lifeProof;
@@ -207,7 +169,7 @@ public class MediatorEndpointManager {
         try {
             // publish to UDDI
             if (uddiURL != null) {
-            	if (isPrimary){
+            	if (lifeProof.isPrimary()){
 	                if (verbose) {
 	                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
 	                }
