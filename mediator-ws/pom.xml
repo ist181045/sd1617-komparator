@@ -23,7 +23,7 @@
         <ws.name>A58_Mediator</ws.name>
         <ws.host>localhost</ws.host>
         <ws.port>807${ws.id}</ws.port>
-        <ws.url>http://${ws.host}:${ws.port}/${artifactId}/endpoint</ws.url>
+        <ws.url>http://${ws.host}:${ws.port}/${project.artifactId}/endpoint</ws.url>
 
         <ws.id>1</ws.id>
         <ws.interval>5</ws.interval>
