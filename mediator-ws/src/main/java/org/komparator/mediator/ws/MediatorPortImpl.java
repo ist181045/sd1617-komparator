@@ -71,24 +71,30 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public void clear() {
-        List<SupplierClient> suppliers;
-        try {
-            suppliers = supplierLookup();
-        } catch (MediatorException me) {
-            System.err.println("Mediator lookup failed: "
-                    + me.getMessage());
-            return;
-        }
-
-        for (SupplierClient supplier : suppliers) {
-            supplier.clear();
-        }
+    	if (endpointManager.getLifeProof().isPrimary()) {
+	        List<SupplierClient> suppliers;
+	        try {
+	            suppliers = supplierLookup();
+	        } catch (MediatorException me) {
+	            System.err.println("Mediator lookup failed: "
+	                    + me.getMessage());
+	            return;
+	        }
+	
+	        for (SupplierClient supplier : suppliers) {
+	            supplier.clear();
+	        }
+    	}
 
         //Reset carts
         carts.clear();
 
         //Reset history
         shoppingHistory.clear();
+        
+        //Clear secondary mediator
+        if (endpointManager.getLifeProof().secondaryExists())
+        	endpointManager.getLifeProof().getMediatorClient().clear();
 
     }
 
