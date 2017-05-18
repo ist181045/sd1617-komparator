@@ -45,7 +45,10 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		
 		if(outbound)
-			addMessageId(smc);
+			outMessageId(smc);
+		else
+			inMessageId(smc);
+		
 		return true;
 	}
 
@@ -71,7 +74,7 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	 * TransformerConfigurationExcpetion while the transform() method can throw
 	 * a TransformerException (both caught and ignored).
 	 */
-	private void addMessageId(SOAPMessageContext smc) {
+	private void outMessageId(SOAPMessageContext smc) {
 		QName service = (QName)smc.get(MessageContext.WSDL_SERVICE);
 
 		String localName = "MessageId";
@@ -109,7 +112,30 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 
 	}
 	
-	private void verifyMessageId(SOAPMessageContext smc) {
+	private void inMessageId(SOAPMessageContext smc) {
+		QName service = (QName)smc.get(MessageContext.WSDL_SERVICE);
+
+		String localName = "MessageId";
+		String prefix = service.getLocalPart().substring(0, 3).toLowerCase();
+		String uri = service.getNamespaceURI();
+		
+		
+		SOAPMessage msg = smc.getMessage();
+		
+		try {
+			SOAPHeader sh = msg.getSOAPPart().getEnvelope().getHeader();
+			NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
+			
+			if(nodes.getLength() == 0) return;
+			
+			String messageId = nodes.item(0).getTextContent();
+			
+			smc.put("org.komparator.mediator.ws.message.id", messageId);
+			
+			
+		} catch (SOAPException e) {
+			//do stuff
+		}
 		
 	}
 
