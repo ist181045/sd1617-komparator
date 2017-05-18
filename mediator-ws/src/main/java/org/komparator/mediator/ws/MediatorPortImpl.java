@@ -230,6 +230,11 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidCreditCard("Credit Card number given is null, empty "
                     + "or contains whitespace characters!");
         }
+        
+        String messageId = getMessageId();
+        
+        if(messageIds.containsKey(messageId))
+        	return (ShoppingResultView)messageIds.get(messageId);
 
         CreditCardClient ccClient;
         try {
@@ -301,6 +306,8 @@ public class MediatorPortImpl implements MediatorPortType {
             srv.setId(srvId);
 
             shoppingHistory.put(datetime, srv);
+            
+            messageIds.put(messageId, srv);
 
             LifeProof lifeProof = endpointManager.getLifeProof();
             if (lifeProof.secondaryExists()) {
@@ -310,13 +317,19 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         carts.remove(cartId);
+        
         return srv;
     }
 
     @Override
     public void addToCart(String cartId, ItemIdView itemId, int itemQty) throws InvalidCartId_Exception,
             InvalidItemId_Exception, InvalidQuantity_Exception, NotEnoughItems_Exception {
-
+    	
+    	String messageId = getMessageId();
+    	
+    	if(messageIds.containsKey(messageId))
+    		return;
+    	
         // check cartID
         if (cartId == null)
             throwInvalidCartId("CartId cannot be null!");
@@ -405,6 +418,8 @@ public class MediatorPortImpl implements MediatorPortType {
                     client.updateCart(cartId, cv.getItems());
                 }
             }
+            
+            messageIds.put(messageId, null);
         }
     }
 
