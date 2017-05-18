@@ -95,7 +95,7 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
                     }
                 }
             } else {
-                NodeList nodes = sh.getElementsByTagNameNS(localName, uri);
+                NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
                 if (nodes.getLength() > 0) {
                     String messageId = nodes.item(0).getTextContent();
                     smc.put(MESSAGE_ID_PROPERTY, messageId);
