@@ -47,6 +47,8 @@ public class MediatorClient implements MediatorPortType {
      * Max number of timeouts
      */
     private static final int MAX_NUM_OF_ATTEMPTS = 5;
+    public static final String MESSAGE_ID_PROPERTY =
+            "org.komparator.mediator.ws.message.id";
 
     /**
      * WS service
@@ -218,8 +220,7 @@ public class MediatorClient implements MediatorPortType {
             requestContext.put(propName, receiveTimeout * 1000);
     }
 
-
-    private void addMessageId() {
+    private synchronized void generateMessageId() {
         SecureRandom random = new SecureRandom();
         BindingProvider bindingProvider = (BindingProvider) port;
         Map<String, Object> requestContext = bindingProvider
@@ -228,7 +229,7 @@ public class MediatorClient implements MediatorPortType {
 
         random.nextBytes(bytes);
         String messageId = printBase64Binary(bytes);
-        requestContext.put("org.komparator.mediator.ws.message.id", messageId);
+        requestContext.put(MESSAGE_ID_PROPERTY, messageId);
     }
 
     // remote invocation methods ----------------------------------------------
@@ -240,7 +241,7 @@ public class MediatorClient implements MediatorPortType {
      * @param args The remote operation's arguments
      * @return The caller method's return type
      */
-    private <T> T doOperation(Object... args) {
+    private <T> T doOperation(Object... args) throws Throwable {
         // Use current thread's stacktrace get the caller method's name, fragile
         // reference: http://stackoverflow.com/a/421338/6506157
         String methodName = Thread.currentThread().getStackTrace()[2]
@@ -251,23 +252,23 @@ public class MediatorClient implements MediatorPortType {
                 .collect(Collectors.toList()).toArray(new Class<?>[]{});
         try {
             Method method = port.getClass().getMethod(methodName, types);
-            try {
-                return (T)method.invoke(port, args);
-            } catch (InvocationTargetException | WebServiceException wse) {
-                System.err.println("Caught: " + wse);
-                Throwable cause = wse.getCause();
+            return (T)method.invoke(port, args);
+        } catch (InvocationTargetException | WebServiceException e) {
+            Throwable cause = e.getCause();
 
-                if (cause != null && (cause instanceof SocketTimeoutException
-                        || cause.getCause() instanceof SocketTimeoutException
-                        || cause instanceof ConnectException
-                        || cause.getCause() instanceof ConnectException)) {
-                    System.err.println("> Caused by a timeout!");
+            if (cause != null && (cause instanceof SocketTimeoutException
+                    || cause.getCause() instanceof SocketTimeoutException
+                    || cause instanceof ConnectException
+                    || cause.getCause() instanceof ConnectException)) {
+                System.err.println("> Caused by a timeout!");
 
-                    if (++numOfAttempts == MAX_NUM_OF_ATTEMPTS) {
-                        System.err.printf("> Number of attempts exceeded: %d%n",
-                                numOfAttempts);
-                        Thread.currentThread().interrupt();
-                    } else {
+                if (++numOfAttempts == MAX_NUM_OF_ATTEMPTS) {
+                    System.err.printf("> Number of attempts exceeded: %d%n",
+                            numOfAttempts);
+                    Thread.currentThread().interrupt();
+                } else {
+                    boolean foundMediator = false;
+                    while (!foundMediator) {
                         try {
                             System.out.print("Sleeping.. ");
                             System.out.flush();
@@ -275,27 +276,32 @@ public class MediatorClient implements MediatorPortType {
                             try {
                                 Thread.sleep(5 * 1000);
                                 System.out.print("Awake!");
-                            } catch (InterruptedException e) {
+                            } catch (InterruptedException ie) {
                                 System.out.print("Interrupted!");
                             }
                             System.out.println(" Trying again..");
 
                             uddiLookup();
+                            foundMediator = true;
                         } catch (MediatorClientException mce) {
                             System.err.println("Failed UDDI lookup");
+                            numOfAttempts++;
                         }
-
-                        T result = doOperation(methodName, args);
-                        numOfAttempts = 0;
-                        return result;
                     }
+
+                    T result = doOperation(args);
+                    numOfAttempts = 0;
+                    return result;
                 }
+            } else {
+                if (cause != null) throw cause;
+                throw e;
             }
-        } catch (NoSuchMethodException | IllegalAccessException e) {
+        } catch (NoSuchMethodException | IllegalAccessException rxe) {
             String error = "Something went horribly wrong! "
                     + "Get your methods right..";
             System.err.println(error);
-            throw new RuntimeException(error, e);
+            throw new RuntimeException(error, rxe);
         }
 
         return null;
@@ -303,50 +309,108 @@ public class MediatorClient implements MediatorPortType {
 
     @Override
     public void clear() {
-        doOperation();
+        try {
+            doOperation();
+        } catch (Throwable throwable) {
+            // ignored, shouldn't throw exception
+        }
     }
 
     @Override
     public String ping(String arg0) {
-        return doOperation(arg0);
+        try {
+            return doOperation(arg0);
+        } catch (Throwable throwable) {
+            // ignored, shouldn't throw exception
+        }
+
+        return null;
     }
 
     @Override
     public List<ItemView> searchItems(String descText)
             throws InvalidText_Exception {
-        return doOperation(descText);
+        try {
+            return doOperation(descText);
+        } catch (Throwable throwable) {
+            if (throwable instanceof InvalidText_Exception)
+                throw (InvalidText_Exception)throwable;
+        }
+
+        return null;
     }
 
     @Override
     public List<CartView> listCarts() {
-        return doOperation();
+        try {
+            return doOperation();
+        } catch (Throwable throwable) {
+            // ignored, shouldn't throw exception
+        }
+
+        return null;
     }
 
     @Override
     public List<ItemView> getItems(String productId)
             throws InvalidItemId_Exception {
-        return doOperation(productId);
+        try {
+            return doOperation(productId);
+        } catch (Throwable throwable) {
+            if (throwable instanceof InvalidItemId_Exception)
+                throw (InvalidItemId_Exception)throwable;
+        }
+
+        return null;
     }
 
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception,
             InvalidCreditCard_Exception {
-        addMessageId();
-        return doOperation(cartId, creditCardNr);
+        generateMessageId();
+        try {
+            return doOperation(cartId, creditCardNr);
+        } catch (Throwable throwable) {
+            if (throwable instanceof EmptyCart_Exception)
+                throw (EmptyCart_Exception)throwable;
+            if (throwable instanceof InvalidCartId_Exception)
+                throw (InvalidCartId_Exception)throwable;
+            if (throwable instanceof InvalidCreditCard_Exception)
+                throw (InvalidCreditCard_Exception)throwable;
+        }
+
+        return null;
     }
 
     @Override
     public void addToCart(String cartId, ItemIdView itemId, int itemQty)
             throws InvalidCartId_Exception, InvalidItemId_Exception,
             InvalidQuantity_Exception, NotEnoughItems_Exception {
-        addMessageId();
-        doOperation(itemId, itemQty);
+        generateMessageId();
+        try {
+            doOperation(itemId, itemQty);
+        } catch (Throwable throwable) {
+            if (throwable instanceof InvalidCartId_Exception)
+                throw (InvalidCartId_Exception)throwable;
+            if (throwable instanceof InvalidItemId_Exception)
+                throw (InvalidItemId_Exception)throwable;
+            if (throwable instanceof InvalidQuantity_Exception)
+                throw (InvalidQuantity_Exception)throwable;
+            if (throwable instanceof NotEnoughItems_Exception)
+                throw (NotEnoughItems_Exception)throwable;
+        }
     }
 
     @Override
     public List<ShoppingResultView> shopHistory() {
-        return doOperation();
+        try {
+            return doOperation();
+        } catch (Throwable throwable) {
+            // ignored, shouldn't throw exception
+        }
+
+        return null;
     }
 
 	@Override
