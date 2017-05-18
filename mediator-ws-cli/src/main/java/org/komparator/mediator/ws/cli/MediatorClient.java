@@ -44,10 +44,14 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 public class MediatorClient implements MediatorPortType {
 
     /**
-     * Max number of timeouts
+     * Max number of attempts after a timeout
      */
     private static final int MAX_NUM_OF_ATTEMPTS = 5;
-    public static final String MESSAGE_ID_PROPERTY =
+
+    /**
+     * Message id property
+     */
+    private static final String MESSAGE_ID_PROPERTY =
             "org.komparator.mediator.ws.message.id";
 
     /**
@@ -74,6 +78,8 @@ public class MediatorClient implements MediatorPortType {
      * WS endpoint address
      */
     private String wsUrl = null; // default value is defined inside WSDL
+    private int connectTimeout;
+    private int receiveTimeout;
     /**
      * output option
      **/
@@ -94,6 +100,8 @@ public class MediatorClient implements MediatorPortType {
     public MediatorClient(String wsUrl, int connectTimeout, int receiveTimeout)
             throws MediatorClientException {
         this.wsUrl = wsUrl;
+        this.connectTimeout = connectTimeout;
+        this.receiveTimeout = receiveTimeout;
 
         createStub();
         setTimeout(connectTimeout, receiveTimeout);
@@ -115,6 +123,8 @@ public class MediatorClient implements MediatorPortType {
             throws MediatorClientException {
         this.uddiUrl = uddiUrl;
         this.wsName = wsName;
+        this.connectTimeout = connectTimeout;
+        this.receiveTimeout = receiveTimeout;
 
         if (wsName != null)
             SecurityManager.getInstance().setReceiver(wsName);
@@ -126,18 +136,6 @@ public class MediatorClient implements MediatorPortType {
 
         createStub();
         setTimeout(connectTimeout, receiveTimeout);
-    }
-    
-    public String getWsUrl() {
-        return wsUrl;
-    }
-
-    public boolean isVerbose() {
-        return verbose;
-    }
-
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
     }
 
     /**
@@ -235,21 +233,35 @@ public class MediatorClient implements MediatorPortType {
     // remote invocation methods ----------------------------------------------
 
     /**
-     * Wrapper method called by every portImpl operation, handles connection
-     * timeouts, retrying after a certain period of time after failure.
+     * Wrapper method for <pre>doOperation</pre>.
      *
-     * @param args The remote operation's arguments
-     * @return The caller method's return type
+     * @see #doOperation(java.lang.Object...)
      */
     private <T> T doOperation(Object... args) throws Throwable {
         // Use current thread's stacktrace get the caller method's name, fragile
+        // Also accounts for recursion.. incredibly fragile!!
         // reference: http://stackoverflow.com/a/421338/6506157
         String methodName = Thread.currentThread().getStackTrace()[2]
                 .getMethodName();
-
         // Build array of types from args
         Class<?>[] types = Arrays.stream(args).map(Object::getClass)
                 .collect(Collectors.toList()).toArray(new Class<?>[]{});
+        return doOperation(methodName, types, args);
+    }
+
+    /**
+     * Invokes a remote operation.
+     *
+     * Method called by every operation, handles connection timeouts, retrying
+     * after a certain period of time after failure.
+     *
+     * @param methodName The method to invoke's name
+     * @param types The types of the arguments
+     * @param args The remote operation's arguments
+     * @return The caller method's return type
+     */
+    private <T> T doOperation(String methodName, Class<?>[] types,
+            Object... args) throws Throwable {
         try {
             Method method = port.getClass().getMethod(methodName, types);
             return (T)method.invoke(port, args);
@@ -289,7 +301,12 @@ public class MediatorClient implements MediatorPortType {
                         }
                     }
 
-                    T result = doOperation(args);
+                    BindingProvider bindingProvider = (BindingProvider) port;
+                    Map<String, Object> requestContext = bindingProvider
+                            .getRequestContext();
+                    requestContext.put(ENDPOINT_ADDRESS_PROPERTY, wsUrl);
+
+                    T result = doOperation(methodName, types, args);
                     numOfAttempts = 0;
                     return result;
                 }
