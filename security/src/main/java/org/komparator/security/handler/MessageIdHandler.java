@@ -1,18 +1,19 @@
 package org.komparator.security.handler;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Set;
 
+import org.komparator.security.*;
+import org.komparator.security.SecurityManager;
+import org.w3c.dom.NodeList;
+
 import javax.xml.namespace.QName;
+import javax.xml.soap.Name;
+import javax.xml.soap.SOAPEnvelope;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPHeader;
+import javax.xml.soap.SOAPHeaderElement;
 import javax.xml.soap.SOAPMessage;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Source;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
+import javax.xml.soap.SOAPPart;
 import javax.xml.ws.handler.MessageContext;
 import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
@@ -21,7 +22,7 @@ import javax.xml.ws.handler.soap.SOAPMessageContext;
  * This SOAPHandler outputs the contents of inbound and outbound messages.
  */
 public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
-
+	public static final String MESSAGE_ID_PROPERTY = "org.komparator.mediator.ws.message.id";
 	//
 	// Handler interface implementation
 	//
@@ -48,7 +49,6 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		logToSystemOut(smc);
 		return true;
 	}
 
@@ -61,10 +61,6 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 		// nothing to clean up
 	}
 
-	/** Date formatter used for outputting timestamps in ISO 8601 format */
-	private SimpleDateFormat dateFormatter =
-            new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
-
 	/**
 	 * Check the MESSAGE_OUTBOUND_PROPERTY in the context to see if this is an
 	 * outgoing or incoming message. Write a brief message to the print stream
@@ -74,39 +70,38 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	 */
 	private void logToSystemOut(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+		QName service = (QName)smc.get(MessageContext.WSDL_SERVICE);
 
-		// print current timestamp
-		System.out.print("[");
-		System.out.print(dateFormatter.format(new Date()));
-		System.out.print("] ");
+		String localName = "MessageId";
+		String prefix = service.getLocalPart().substring(0, 3).toLowerCase();
+		String uri = service.getNamespaceURI();
 
-		System.out.print("intercepted ");
-		if (outbound)
-			System.out.print("OUTbound");
-		else
-			System.out.print(" INbound");
-		System.out.println(" SOAP message:");
-
-		SOAPMessage message = smc.getMessage();
+		SOAPMessage msg = smc.getMessage();
+		SOAPPart sp = msg.getSOAPPart();
 		try {
-			Source source = new DOMSource(message.getSOAPPart());
+			SOAPEnvelope se = sp.getEnvelope();
+			SOAPHeader sh = se.getHeader();
 
-			TransformerFactory tf = TransformerFactory.newInstance();
-			Transformer t = tf.newTransformer();
+			String sender = SecurityManager.getInstance().getSender();
+			if (sender.equals("MediatorClient")) {
+				String messageId = (String) smc.get(MESSAGE_ID_PROPERTY);
+				if (messageId == null) return;
 
-			t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-			t.setOutputProperty(OutputKeys.INDENT, "yes");
-			t.setOutputProperty(OutputKeys.STANDALONE, "yes");
-			t.setOutputProperty(
-					"{http://xml.apache.org/xslt}indent-amount", "2");
+				Name name = se.createName(localName, prefix, uri);
+				SOAPHeaderElement element = sh.addHeaderElement(name);
+				element.addTextNode(messageId);
+				msg.saveChanges();
+			} else {
+				NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
+				if (nodes.getLength() == 0) return;
 
-			StreamResult result = new StreamResult(System.out);
-			t.transform(source, result);
-		} catch (TransformerException te) {
-			System.err.print("Ignoring " + te.getClass().getCanonicalName()
-					+ " in handler: ");
-			System.err.println(te);
+				String messageId = nodes.item(0).getTextContent();
+				// TODO: Handle message id and responses
+			}
+		} catch (SOAPException e) {
+			System.err.println("bork");
 		}
+
 	}
 
 }

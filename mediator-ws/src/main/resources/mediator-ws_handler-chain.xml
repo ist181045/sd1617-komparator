@@ -14,6 +14,11 @@
         </handler>
         <handler>
             <handler-class>
+                org.komparator.security.handler.MessageIdHandler
+            </handler-class>
+        </handler>
+        <handler>
+            <handler-class>
                 org.komparator.security.handler.LoggingHandler
             </handler-class>
         </handler>

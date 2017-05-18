@@ -1,11 +1,13 @@
 package org.komparator.mediator.ws.cli;
 
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 import static javax.xml.ws.BindingProvider.ENDPOINT_ADDRESS_PROPERTY;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.SocketTimeoutException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -217,6 +219,18 @@ public class MediatorClient implements MediatorPortType {
     }
 
 
+    private void addMessageId() {
+        SecureRandom random = new SecureRandom();
+        BindingProvider bindingProvider = (BindingProvider) port;
+        Map<String, Object> requestContext = bindingProvider
+                .getRequestContext();
+        byte[] bytes = new byte[16];
+
+        random.nextBytes(bytes);
+        String messageId = printBase64Binary(bytes);
+        requestContext.put("org.komparator.mediator.ws.message.id", messageId);
+    }
+
     // remote invocation methods ----------------------------------------------
 
     /**
@@ -318,6 +332,7 @@ public class MediatorClient implements MediatorPortType {
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception,
             InvalidCreditCard_Exception {
+        addMessageId();
         return doOperation(cartId, creditCardNr);
     }
 
@@ -325,6 +340,7 @@ public class MediatorClient implements MediatorPortType {
     public void addToCart(String cartId, ItemIdView itemId, int itemQty)
             throws InvalidCartId_Exception, InvalidItemId_Exception,
             InvalidQuantity_Exception, NotEnoughItems_Exception {
+        addMessageId();
         doOperation(itemId, itemQty);
     }
 
