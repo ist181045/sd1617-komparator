@@ -127,6 +127,7 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 			
 			PrivateKey key = CertUtil.getPrivateKeyFromKeyStore(entity.toLowerCase(), KEYSTORE_PASSWORD.toCharArray(), keystore);
 
+			message.saveChanges();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			message.writeTo(out);
 			byte[] bytes = parseBase64Binary(new String(out.toByteArray()));
@@ -206,6 +207,7 @@ private void verifySignature(SOAPMessageContext smc) {
 			element = (SOAPElement) header.removeChild((Node)it.next());
 			String signature = element.getValue();
 			
+			message.saveChanges();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			message.writeTo(out);
 			bytes = parseBase64Binary(new String(out.toByteArray()));
