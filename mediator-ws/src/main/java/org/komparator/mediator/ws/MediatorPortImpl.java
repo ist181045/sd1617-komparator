@@ -442,16 +442,19 @@ public class MediatorPortImpl implements MediatorPortType {
     }
     
     @Override
-    public void updateCart(String cartID, List<CartItemView> items) {
+    public void updateCart(String cartId, List<CartItemView> items) {
     	 if (!endpointManager.getLifeProof().isPrimary()) {
-    		 CartView cv = new CartView();
-             cv.setCartId(cartID);
+             CartView cv = new CartView();
+             cv.setCartId(cartId);
 
-    		 for (CartItemView civ : items) {
-    			 cv.getItems().add(civ);
-    		 }
+             for (CartItemView civ : items) {
+                 cv.getItems().add(civ);
+             }
 
-    		 carts.put(cartID, cv);
+             if (carts.containsKey(cartId))
+                 carts.replace(cartId, cv);
+             else
+                 carts.put(cartId, cv);
     	 }
     }
 
