@@ -618,7 +618,6 @@ public class MediatorPortImpl implements MediatorPortType {
 	  		return printBase64Binary(bytes);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
 		}   
     	
 		return null;
