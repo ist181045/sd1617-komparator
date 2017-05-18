@@ -1,5 +1,10 @@
 package org.komparator.security.handler;
 
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Set;
 
 import org.komparator.security.*;
@@ -23,6 +28,10 @@ import javax.xml.ws.handler.soap.SOAPMessageContext;
  */
 public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	public static final String MESSAGE_ID_PROPERTY = "org.komparator.mediator.ws.message.id";
+	
+	private static final String OPERATION_BUYCART = "buyCart";
+	private static final String OPERATION_ADDTOCART = "addToCart";
+	
 	//
 	// Handler interface implementation
 	//
@@ -76,7 +85,7 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	 */
 	private void outMessageId(SOAPMessageContext smc) {
 		QName service = (QName)smc.get(MessageContext.WSDL_SERVICE);
-
+		
 		String localName = "MessageId";
 		String prefix = service.getLocalPart().substring(0, 3).toLowerCase();
 		String uri = service.getNamespaceURI();
@@ -90,7 +99,13 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 			SOAPHeader sh = se.getHeader();
 
 			String sender = SecurityManager.getInstance().getSender();
-			if (sender.equals("MediatorClient")) {
+			
+			QName operation = (QName) smc.get(MessageContext.WSDL_OPERATION);
+
+			System.out.println(operation.getLocalPart());
+			
+			
+			if (sender.equals("MediatorClient") && (operation.equals(OPERATION_BUYCART) || operation.equals(OPERATION_ADDTOCART))) {
 				String messageId = (String) smc.get(MESSAGE_ID_PROPERTY);
 				if (messageId == null) return;
 
@@ -99,12 +114,6 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 				element.addTextNode(messageId);
 				msg.saveChanges();
 				
-			} else {
-				NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
-				if (nodes.getLength() == 0) return;
-
-				String messageId = nodes.item(0).getTextContent();
-				// TODO: Handle message id and responses
 			}
 		} catch (SOAPException e) {
 			System.err.println("bork");
@@ -130,11 +139,11 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 			
 			String messageId = nodes.item(0).getTextContent();
 			
-			smc.put("org.komparator.mediator.ws.message.id", messageId);
+			smc.put(MESSAGE_ID_PROPERTY, messageId);
 			
 			
 		} catch (SOAPException e) {
-			//do stuff
+			System.err.println("bork");
 		}
 		
 	}
