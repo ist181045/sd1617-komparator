@@ -1,16 +1,10 @@
 package org.komparator.mediator.ws;
 
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -23,7 +17,6 @@ import javax.annotation.Resource;
 import javax.jws.HandlerChain;
 import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
-import javax.xml.ws.handler.MessageContext;
 
 import org.komparator.mediator.ws.cli.MediatorClient;
 import org.komparator.supplier.ws.BadProductId_Exception;
@@ -50,11 +43,14 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 )
 @HandlerChain(file = "/mediator-ws_handler-chain.xml")
 public class MediatorPortImpl implements MediatorPortType {
-	
-	@Resource
-	WebServiceContext wsc;
-	
-    private Map<String, Object> messageIds = new HashMap<>();
+
+    @Resource
+    private WebServiceContext wsc;
+
+    private static final String MESSAGE_ID_PROPERTY =
+            "org.komparator.mediator.ws.message.id";
+
+    private Map<String, Object> messageIds = new ConcurrentHashMap<>();
 
     // ItemView comparator
     private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
@@ -68,7 +64,8 @@ public class MediatorPortImpl implements MediatorPortType {
                 : iv1.getPrice() - iv2.getPrice();
     };
 
-    private static final String CREDIT_CARD_WS_URL = "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
+    private static final String CREDIT_CARD_WS_URL =
+            "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
 
     // end point manager
     private MediatorEndpointManager endpointManager;
@@ -83,22 +80,11 @@ public class MediatorPortImpl implements MediatorPortType {
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
     }
-    
-    public Map<String, Object> getMessagesMap() {
-    	return messageIds;
-    }
-    
-    public Object getResponseById(String messageId) {
-    	return messageIds.get(messageId);
-    }
-    
-    public void addResponseId(String messageId, Object response) {
-    	messageIds.put(messageId, response);
-    }
 
     @Override
     public void clear() {
-    	if (endpointManager.getLifeProof().isPrimary()) {
+        LifeProof lifeProof = endpointManager.getLifeProof();
+    	if (lifeProof.isPrimary()) {
 	        List<SupplierClient> suppliers;
 	        try {
 	            suppliers = supplierLookup();
@@ -120,8 +106,8 @@ public class MediatorPortImpl implements MediatorPortType {
         shoppingHistory.clear();
         
         //Clear secondary mediator
-        if (endpointManager.getLifeProof().secondaryExists())
-        	endpointManager.getLifeProof().getMediatorClient().clear();
+        if (lifeProof.secondaryExists())
+        	lifeProof.getMediatorClient().clear();
 
     }
 
@@ -144,7 +130,6 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
                 ProductView productview = null;
@@ -182,7 +167,6 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidText("Product description cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
-
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
@@ -192,7 +176,6 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
                 List<ProductView> productViews = null;
@@ -212,29 +195,28 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         return new ArrayList<>(products);
-
     }
 
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception,
             InvalidCreditCard_Exception {
+        String messageId =
+                (String)wsc.getMessageContext().get(MESSAGE_ID_PROPERTY);
+        if(messageIds.containsKey(messageId))
+            return (ShoppingResultView)messageIds.get(messageId);
 
         if (cartId == null || cartId.trim().length() == 0
-                || cartId.matches(".*[\r\n\t]+.*"))
+                || cartId.matches(".*[\r\n\t]+.*")) {
             throwInvalidCartId("Cart ID given is null, empty or contains "
                     + "whitespace characters!");
+        }
 
         if (creditCardNr == null || creditCardNr.trim().length() == 0
                 || creditCardNr.matches(".*[\r\n\t]+.*")) {
             throwInvalidCreditCard("Credit Card number given is null, empty "
                     + "or contains whitespace characters!");
         }
-        
-        String messageId = getMessageId();
-        
-        if(messageIds.containsKey(messageId))
-        	return (ShoppingResultView)messageIds.get(messageId);
 
         CreditCardClient ccClient;
         try {
@@ -304,9 +286,7 @@ public class MediatorPortImpl implements MediatorPortType {
                     + "@" + datetime;
 
             srv.setId(srvId);
-
             shoppingHistory.put(datetime, srv);
-            
             messageIds.put(messageId, srv);
 
             LifeProof lifeProof = endpointManager.getLifeProof();
@@ -322,11 +302,11 @@ public class MediatorPortImpl implements MediatorPortType {
     }
 
     @Override
-    public void addToCart(String cartId, ItemIdView itemId, int itemQty) throws InvalidCartId_Exception,
-            InvalidItemId_Exception, InvalidQuantity_Exception, NotEnoughItems_Exception {
-    	
-    	String messageId = getMessageId();
-    	
+    public void addToCart(String cartId, ItemIdView itemId, int itemQty)
+            throws InvalidCartId_Exception, InvalidItemId_Exception,
+            InvalidQuantity_Exception, NotEnoughItems_Exception {
+    	String messageId = (String)wsc.getMessageContext().get(
+                MESSAGE_ID_PROPERTY);
     	if(messageIds.containsKey(messageId))
     		return;
     	
@@ -363,7 +343,8 @@ public class MediatorPortImpl implements MediatorPortType {
 
         ProductView pv;
         try {
-            SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
+            SupplierClient supplier = new SupplierClient(
+                    endpointManager.getUddiURL(), supplierId);
             synchronized (this) {
                 pv = supplier.getProduct(productId);
             }
@@ -425,12 +406,10 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public String ping(String arg0) {
-        if (arg0 == null || arg0.trim().length() == 0 ||
-                arg0.trim().matches(".*[\\r\\n\\t]+.*")) {
+        if (arg0 == null || (arg0 = arg0.trim()).length() == 0 ||
+                arg0.matches(".*[\\r\\n\\t]+.*")) {
             return "Invalid ping argument!";
         }
-
-        arg0 = arg0.trim();
 
         List<SupplierClient> suppliers;
         try {
@@ -493,10 +472,7 @@ public class MediatorPortImpl implements MediatorPortType {
                  cv.getItems().add(civ);
              }
 
-             if (carts.containsKey(cartId))
-                 carts.replace(cartId, cv);
-             else
-                 carts.put(cartId, cv);
+             carts.put(cartId, cv);
     	 }
     }
 
@@ -575,10 +551,8 @@ public class MediatorPortImpl implements MediatorPortType {
         String uddiURL = endpointManager.getUddiURL();
 
         try {
-
             UDDINaming uddiNaming = new UDDINaming(uddiURL);
             uddiRecords = uddiNaming.listRecords("A58_Supplier%");
-
         } catch (Exception e) {
             String msg = String.format("Failed supplier lookup on uddi at %s!",
                     uddiURL);
@@ -593,7 +567,8 @@ public class MediatorPortImpl implements MediatorPortType {
             List<SupplierClient> suppliers = new ArrayList<>();
             for (UDDIRecord element : uddiRecords) {
                 try {
-                    SupplierClient temp = new SupplierClient(element.getUrl(), element.getOrgName());
+                    SupplierClient temp = new SupplierClient(
+                            element.getUrl(), element.getOrgName());
                     temp.setWsName(element.getOrgName());
                     if (temp.ping("A58_Mediator") != null)
                         suppliers.add(temp);
@@ -618,24 +593,4 @@ public class MediatorPortImpl implements MediatorPortType {
     		}
     	}
     }
-    
-    private String getMessageId() {
-    	MessageContext mc = wsc.getMessageContext();
-    
-		try {
-	    	ByteArrayOutputStream bos = new ByteArrayOutputStream();
-			ObjectOutputStream out;
-			out = new ObjectOutputStream(bos);
-			out.writeObject(mc.get("org.komparator.mediator.ws.message.id"));
-			out.flush();
-	  		byte[] bytes = bos.toByteArray();
-	  		
-	  		return printBase64Binary(bytes);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-		}   
-    	
-		return null;
-    }
-    
 }
