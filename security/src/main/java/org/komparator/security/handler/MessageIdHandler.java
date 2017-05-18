@@ -42,7 +42,10 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	 */
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
-		logToSystemOut(smc);
+		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+		
+		if(outbound)
+			addMessageId(smc);
 		return true;
 	}
 
@@ -68,13 +71,14 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 	 * TransformerConfigurationExcpetion while the transform() method can throw
 	 * a TransformerException (both caught and ignored).
 	 */
-	private void logToSystemOut(SOAPMessageContext smc) {
-		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+	private void addMessageId(SOAPMessageContext smc) {
 		QName service = (QName)smc.get(MessageContext.WSDL_SERVICE);
 
 		String localName = "MessageId";
 		String prefix = service.getLocalPart().substring(0, 3).toLowerCase();
 		String uri = service.getNamespaceURI();
+		
+		System.out.println(service.getLocalPart());
 
 		SOAPMessage msg = smc.getMessage();
 		SOAPPart sp = msg.getSOAPPart();
@@ -91,6 +95,7 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 				SOAPHeaderElement element = sh.addHeaderElement(name);
 				element.addTextNode(messageId);
 				msg.saveChanges();
+				
 			} else {
 				NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
 				if (nodes.getLength() == 0) return;
@@ -102,6 +107,10 @@ public class MessageIdHandler implements SOAPHandler<SOAPMessageContext> {
 			System.err.println("bork");
 		}
 
+	}
+	
+	private void verifyMessageId(SOAPMessageContext smc) {
+		
 	}
 
 }

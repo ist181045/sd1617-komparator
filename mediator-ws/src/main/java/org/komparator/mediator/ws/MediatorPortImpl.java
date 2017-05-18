@@ -1,19 +1,29 @@
 package org.komparator.mediator.ws;
 
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Resource;
 import javax.jws.HandlerChain;
 import javax.jws.WebService;
+import javax.xml.ws.WebServiceContext;
+import javax.xml.ws.handler.MessageContext;
 
 import org.komparator.mediator.ws.cli.MediatorClient;
 import org.komparator.supplier.ws.BadProductId_Exception;
@@ -40,6 +50,11 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 )
 @HandlerChain(file = "/mediator-ws_handler-chain.xml")
 public class MediatorPortImpl implements MediatorPortType {
+	
+	@Resource
+	WebServiceContext wsc;
+	
+    private Map<String, Object> messageIds = new HashMap<>();
 
     // ItemView comparator
     private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
@@ -67,6 +82,18 @@ public class MediatorPortImpl implements MediatorPortType {
 
     public MediatorPortImpl(MediatorEndpointManager endpointManager) {
         this.endpointManager = endpointManager;
+    }
+    
+    public Map<String, Object> getMessagesMap() {
+    	return messageIds;
+    }
+    
+    public Object getResponseById(String messageId) {
+    	return messageIds.get(messageId);
+    }
+    
+    public void addResponseId(String messageId, Object response) {
+    	messageIds.put(messageId, response);
     }
 
     @Override
@@ -576,4 +603,25 @@ public class MediatorPortImpl implements MediatorPortType {
     		}
     	}
     }
+    
+    private String getMessageId() {
+    	MessageContext mc = wsc.getMessageContext();
+    
+		try {
+	    	ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			ObjectOutputStream out;
+			out = new ObjectOutputStream(bos);
+			out.writeObject(mc.get("org.komparator.mediator.ws.message.id"));
+			out.flush();
+	  		byte[] bytes = bos.toByteArray();
+	  		
+	  		return printBase64Binary(bytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}   
+    	
+		return null;
+    }
+    
 }
