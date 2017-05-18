@@ -139,16 +139,11 @@ public class SignatureHandler implements SOAPHandler<SOAPMessageContext> {
 			
 			System.out.printf("%nSigned SOAP header%n%n");
 			
-		} catch (SOAPException se) {
-			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());
-		} catch(IOException ioe) {
-			System.out.println("Signature Handler caught an IOException: " + ioe.getMessage());
-		} catch (KeyStoreException kse) {
-			System.out.println("Signature Handler caught a KeyStoreException: " + kse.getMessage());
-		} catch (UnrecoverableKeyException uke) {
-			System.out.println("Signature Handler caught an UnrecoverableKeyException: " + uke.getMessage());
+		} catch (SOAPException | IOException | UnrecoverableKeyException | KeyStoreException e) {
+			String error = "Signature was not correctly made" + e.getMessage();
+			System.out.println(error);
+			throw new RuntimeException(error);
 		}
-		
 	}
 	
 private void verifySignature(SOAPMessageContext smc) {
@@ -168,9 +163,9 @@ private void verifySignature(SOAPMessageContext smc) {
 			Iterator it = header.getChildElements(name);
 			
 			if(!it.hasNext()) {
-				String errorMessage = "Couldn't get Entity field from header";
-				System.out.println(errorMessage);
-				throw new RuntimeException(errorMessage);
+				String error = "Couldn't get Entity field from header";
+				System.out.println(error);
+				throw new RuntimeException(error);
 			}
 			
 			SOAPElement element = (SOAPElement) it.next();
@@ -189,9 +184,9 @@ private void verifySignature(SOAPMessageContext smc) {
 			
 			
 			if(!CertUtil.verifySignedCertificate(cert, CertUtil.getX509CertificateFromResource("ca.cer"))) {
-				String errorMessage = "Certificate from CA not valid";
-				System.out.println(errorMessage);
-				throw new RuntimeException(errorMessage);
+				String error = "Certificate from CA not valid";
+				System.out.println(error);
+				throw new RuntimeException(error);
 			}
 			
 			name = envelope.createName(SIGNATURE_NAME, SIGNATURE_PREFIX, SIGNATURE_NAMESPACE);
@@ -199,9 +194,9 @@ private void verifySignature(SOAPMessageContext smc) {
 			it = header.getChildElements(name);
 			
 			if(!it.hasNext()) {
-				String errorMessage = "Couldn't get Signature field from header";
-				System.out.println(errorMessage);
-				throw new RuntimeException(errorMessage);
+				String error = "Couldn't get Signature field from header";
+				System.out.println(error);
+				throw new RuntimeException(error);
 			}
 			
 			element = (SOAPElement) header.removeChild((Node)it.next());
@@ -213,21 +208,18 @@ private void verifySignature(SOAPMessageContext smc) {
 			bytes = parseBase64Binary(new String(out.toByteArray()));
 			
 			if(!CertUtil.verifyDigitalSignature("SHA256WithRSA", cert, bytes, parseBase64Binary(signature))) {
-				String errorMessage = "Signature was not correctly verified";
-				System.out.println(errorMessage);
-				throw new RuntimeException(errorMessage);
+				String error = "Signature invalid";
+				System.out.println(error);
+				throw new RuntimeException(error);
 			}
 			
 			System.out.printf("%nVerified valid Signature%n%n");
 			
-		} catch (SOAPException se) {
-			System.out.println("Signature Handler caught a SOAPException: " + se.getMessage());
-		} catch(CertificateException ce) {
-			System.out.println("Signature Handler caught a CertificateException: " + ce.getMessage());
-		} catch(IOException ioe) {
-			System.out.println("Signature Handler caught an IOException: " + ioe.getMessage());
-		} catch(CAClientException cae) {
-			System.out.println("Signature Handler caught a CAClientException: " + cae.getMessage());
+		} catch (SOAPException | CertificateException | IOException | CAClientException e ) {
+			String error = "Signature was not correctly verified" + e.getMessage();
+			System.out.println(error);
+			throw new RuntimeException(error);
+		
 		}
 		
 	}
