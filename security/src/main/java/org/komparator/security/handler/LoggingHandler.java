@@ -74,6 +74,14 @@ public class LoggingHandler implements SOAPHandler<SOAPMessageContext> {
 	 */
 	private void logToSystemOut(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
+		
+		if(((String)smc.get(MessageContext.WSDL_OPERATION)).equals("imAlive")) {
+			if(outbound)
+				System.out.printf("%nSent imAlive%n%n");
+			else
+				System.out.printf("%nReceived imAlive%n%n");
+			return;
+		}
 
 		// print current timestamp
 		System.out.print("[");
