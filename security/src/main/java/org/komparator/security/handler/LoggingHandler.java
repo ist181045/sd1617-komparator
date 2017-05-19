@@ -75,14 +75,17 @@ public class LoggingHandler implements SOAPHandler<SOAPMessageContext> {
 	private void logToSystemOut(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
 		
-		if(((String)smc.get(MessageContext.WSDL_OPERATION)).equals("imAlive")) {
+		QName qname = (QName)smc.get(MessageContext.WSDL_OPERATION);
+		String operation = (String)qname.getLocalPart();
+		
+		if(operation.equals("imAlive") || operation.equals("updateShopHistory") || operation.equals("updateCart")) {
 			if(outbound)
-				System.out.printf("%nSent imAlive%n%n");
+				System.out.printf("%nSent " + operation + "%n%n");
 			else
-				System.out.printf("%nReceived imAlive%n%n");
+				System.out.printf("%nReceived " + operation + "%n%n");
 			return;
 		}
-
+		
 		// print current timestamp
 		System.out.print("[");
 		System.out.print(dateFormatter.format(new Date()));
