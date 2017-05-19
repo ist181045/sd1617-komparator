@@ -86,6 +86,10 @@ public class MediatorClient implements MediatorPortType {
     private boolean verbose = false;
 
     private int numOfAttempts = 0;
+    
+    public String getWsUrl() {
+    	return wsUrl;
+    }
 
     /**
      * constructor with provided web service Url
