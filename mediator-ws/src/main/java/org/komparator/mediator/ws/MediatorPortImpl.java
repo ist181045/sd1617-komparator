@@ -298,6 +298,12 @@ public class MediatorPortImpl implements MediatorPortType {
 
         carts.remove(cartId);
         
+        LifeProof lifeProof = endpointManager.getLifeProof();
+        if (lifeProof.secondaryExists()) {
+            MediatorClient client = lifeProof.getMediatorClient();
+            client.updateCart(cartId, null);
+        }
+        
         return srv;
     }
 
@@ -400,7 +406,7 @@ public class MediatorPortImpl implements MediatorPortType {
                 }
             }
             
-            messageIds.put(messageId, null);
+            messageIds.put(messageId, new Object());
         }
     }
 
@@ -465,6 +471,11 @@ public class MediatorPortImpl implements MediatorPortType {
     @Override
     public void updateCart(String cartId, List<CartItemView> items) {
     	 if (!endpointManager.getLifeProof().isPrimary()) {
+    		 if (items == null || items.isEmpty()) {
+    			 carts.remove(cartId);
+    			 return;
+    		 }
+				
              CartView cv = new CartView();
              cv.setCartId(cartId);
 

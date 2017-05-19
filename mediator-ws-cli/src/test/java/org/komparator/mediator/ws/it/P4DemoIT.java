@@ -1,6 +1,7 @@
 package org.komparator.mediator.ws.it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 import java.util.List;
@@ -9,11 +10,14 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.komparator.mediator.ws.CartView;
+import org.komparator.mediator.ws.EmptyCart_Exception;
 import org.komparator.mediator.ws.InvalidCartId_Exception;
+import org.komparator.mediator.ws.InvalidCreditCard_Exception;
 import org.komparator.mediator.ws.InvalidItemId_Exception;
 import org.komparator.mediator.ws.InvalidQuantity_Exception;
 import org.komparator.mediator.ws.ItemIdView;
 import org.komparator.mediator.ws.NotEnoughItems_Exception;
+import org.komparator.mediator.ws.ShoppingResultView;
 import org.komparator.security.SecurityManager;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadProduct_Exception;
@@ -29,6 +33,8 @@ public class P4DemoIT extends BaseIT {
 
 	// static members
 	private final static String CART_ID = "CartId";
+	private final static String CART_ID2 = "CartId2";
+	private final static String CC_NUMBER = "4012888888881881";
 	
 	private static SupplierClient sc1;
 	private static SupplierClient sc2;
@@ -53,8 +59,7 @@ public class P4DemoIT extends BaseIT {
 					sc1.createProduct(product);
 				}
 				{
-					//This product will only be used in ZeroQuantityTest
-					//Warning: it will be changed
+
 					ProductView product = new ProductView();
 					product.setId("I1420");
 					product.setDesc("Zero Quantity");
@@ -95,19 +100,51 @@ public class P4DemoIT extends BaseIT {
 	}
 	
 	@Test 
-	public void P4Demo() {
+	public void R1() {
 		SecurityManager.getInstance().setSender("MediatorClient");
 		try {
 			mediatorClient.addToCart(CART_ID, newIIV("I1202", sc1.getWsName()), 20);
+			mediatorClient.addToCart(CART_ID, newIIV("I1202", sc2.getWsName()), 20);
+			mediatorClient.addToCart(CART_ID2, newIIV("I1420", sc1.getWsName()), 1);
+			mediatorClient.buyCart(CART_ID2, CC_NUMBER);
 		} catch (InvalidCartId_Exception | InvalidItemId_Exception | InvalidQuantity_Exception
-				| NotEnoughItems_Exception e) {
+				| NotEnoughItems_Exception | EmptyCart_Exception | InvalidCreditCard_Exception e) {
 			fail("Can't perform test" + e.getMessage());
 		}
 		
-		System.out.println("You can now kill Primary Mediator. Press enter to continue");
+		
+		List<CartView> cartList = mediatorClient.listCarts();
+		assertNotNull(cartList);
+		assertEquals(1, cartList.size());
+		
+		assertEquals(CART_ID, cartList.get(0).getCartId());
+		
+		List<ShoppingResultView> srv = mediatorClient.shopHistory();
+		
+		assertNotNull(srv);
+		assertEquals(1, srv.size());
+		
+		assertEquals("I1420", srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getProductId());
+		assertEquals(sc1.getWsName(), srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getSupplierId());
+		
+	}
+	
+	@Test 
+	public void R2() {
+		SecurityManager.getInstance().setSender("MediatorClient");
+		try {
+			mediatorClient.addToCart(CART_ID, newIIV("I1202", sc1.getWsName()), 20);
+			mediatorClient.addToCart(CART_ID, newIIV("I1202", sc2.getWsName()), 20);
+			mediatorClient.addToCart(CART_ID2, newIIV("I1420", sc1.getWsName()), 1);
+			mediatorClient.buyCart(CART_ID2, CC_NUMBER);
+		} catch (InvalidCartId_Exception | InvalidItemId_Exception | InvalidQuantity_Exception
+				| NotEnoughItems_Exception | EmptyCart_Exception | InvalidCreditCard_Exception e) {
+			fail("Can't perform test" + e.getMessage());
+		}
 
 		while(mediatorClient.getWsUrl().equals("http://localhost:8071/mediator-ws/endpoint") ){
 			try {
+				System.out.printf("You can now kill Primary Mediator%n%n");
 				Thread.sleep(3000);
 				mediatorClient.ping("Kill first mediator");
 				
@@ -119,7 +156,18 @@ public class P4DemoIT extends BaseIT {
 		
 		
 		List<CartView> cartList = mediatorClient.listCarts();
+		assertNotNull(cartList);
 		assertEquals(1, cartList.size());
+		
+		assertEquals(CART_ID, cartList.get(0).getCartId());
+		
+		List<ShoppingResultView> srv = mediatorClient.shopHistory();
+		
+		assertNotNull(srv);
+		assertEquals(1, srv.size());
+		
+		assertEquals("I1420", srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getProductId());
+		assertEquals(sc1.getWsName(), srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getSupplierId());
 		
 	}
 	
