@@ -19,42 +19,60 @@
 
         <mainclass>org.komparator.mediator.ws.MediatorApp</mainclass>
 
-        <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090/</uddi.url>
+        <!-- Web Service Properties -->
         <ws.name>A58_Mediator</ws.name>
-        <ws.url>http://localhost:8080/mediator-ws/endpoint</ws.url>
+        <ws.host>localhost</ws.host>
+        <ws.port>807${ws.id}</ws.port>
+        <ws.url>http://${ws.host}:${ws.port}/${project.artifactId}/endpoint</ws.url>
+
+        <ws.id>1</ws.id>
+        <ws.interval>5</ws.interval>
+
+        <!-- UDDI Properties -->
+        <uddi.user>a58</uddi.user>
+        <uddi.pass>M6cggAUT</uddi.pass>
+        <uddi.host>uddi.sd.rnl.tecnico.ulisboa.pt</uddi.host>
+        <uddi.port>9090</uddi.port>
+        <uddi.url>http://${uddi.user}:${uddi.pass}@${uddi.host}:${uddi.port}/</uddi.url>
     </properties>
 
     <dependencies>
-    	<!-- JAX-WS -->
-        <dependency>
-            <groupId>com.sun.xml.ws</groupId>
-            <artifactId>jaxws-rt</artifactId>
-            <version>2.2.10</version>
-        </dependency>
         <!-- UDDI Naming -->
         <dependency>
             <groupId>pt.ulisboa.tecnico.sdis</groupId>
             <artifactId>uddi-naming</artifactId>
             <version>1.2</version>
         </dependency>
-        <!-- SUPPLIER CLIENT -->
+        <!-- Mediator WS Client -->
         <dependency>
-	        <groupId>org.komparator.A58</groupId>
-	        <artifactId>supplier-ws-cli</artifactId>
-	        <version>1.0-SNAPSHOT</version>
-	    </dependency>
-	    <!-- SECURITY -->
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>mediator-ws-cli</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!-- Credit Card WS Client -->
         <dependency>
-	        <groupId>org.komparator.A58</groupId>
-	        <artifactId>security</artifactId>
-	        <version>1.0-SNAPSHOT</version>
-	    </dependency>
-        <!-- CREDIT CARD CLIENT -->
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>cc-ws-cli</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!-- Supplier WS Client -->
         <dependency>
-	        <groupId>org.komparator.A58</groupId>
-	        <artifactId>cc-ws-cli</artifactId>
-	        <version>1.0-SNAPSHOT</version>
-	    </dependency>
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>supplier-ws-cli</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <!-- JAX-WS -->
+        <dependency>
+            <groupId>com.sun.xml.ws</groupId>
+            <artifactId>jaxws-rt</artifactId>
+            <version>2.2.10</version>
+        </dependency>
+        <!-- Security -->
+        <dependency>
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>security</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -101,6 +119,7 @@
                         <argument>${uddi.url}</argument>
                         <argument>${ws.name}</argument>
                         <argument>${ws.url}</argument>
+                        <argument>${ws.interval}</argument>
                     </arguments>
                 </configuration>
             </plugin>

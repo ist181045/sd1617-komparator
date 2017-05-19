@@ -17,45 +17,53 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
+        <mainclass>org.komparator.supplier.ws.cli.SupplierClientApp</mainclass>
+
+        <!-- Web Service Properties -->
+        <ws.name>A58_Supplier${ws.id}</ws.name>
+        <ws.host>localhost</ws.host>
+        <ws.port>808${ws.id}</ws.port>
+        <ws.url>http://${ws.host}:${ws.port}/supplier-ws/endpoint</ws.url>
+
+        <ws.id>1</ws.id>
+
+        <!-- WSDL Name & Location -->
         <wsdl.directory>${basedir}/../supplier-ws/src/main/resources</wsdl.directory>
         <wsdl.filename>supplier.1_0.wsdl</wsdl.filename>
 
-        <mainclass>org.komparator.supplier.ws.cli.SupplierClientApp</mainclass>
-
-        <ws.url>http://localhost:8081/supplier-ws/endpoint</ws.url>
-        <uddi.url>http://a58:M6cggAUT@uddi.sd.rnl.tecnico.ulisboa.pt:9090</uddi.url>
-        <ws.name>A58_Supplier1</ws.name>
-        
+        <!-- UDDI Properties -->
+        <uddi.user>a58</uddi.user>
+        <uddi.pass>M6cggAUT</uddi.pass>
+        <uddi.host>uddi.sd.rnl.tecnico.ulisboa.pt</uddi.host>
+        <uddi.port>9090</uddi.port>
+        <uddi.url>http://${uddi.user}:${uddi.pass}@${uddi.host}:${uddi.port}/</uddi.url>
     </properties>
 
     <dependencies>
+        <!-- UDDI Naming -->
+        <dependency>
+            <groupId>pt.ulisboa.tecnico.sdis</groupId>
+            <artifactId>uddi-naming</artifactId>
+            <version>1.2</version>
+        </dependency>
         <!-- JAX-WS -->
         <dependency>
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>jaxws-rt</artifactId>
             <version>2.2.10</version>
         </dependency>
-        
+        <!-- Security -->
+        <dependency>
+            <groupId>org.komparator.A58</groupId>
+            <artifactId>security</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
         <!-- JUnit -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.12</version>
             <scope>test</scope>
-        </dependency>
-        
-        <!-- UDDI Naming -->
-	    <dependency>
-	        <groupId>pt.ulisboa.tecnico.sdis</groupId>
-	        <artifactId>uddi-naming</artifactId>
-	        <version>1.2</version>
-	    </dependency>
-
-        <!-- SECURITY -->
-	    <dependency>
-        	<groupId>org.komparator.A58</groupId>
-		    <artifactId>security</artifactId>
-		    <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
 

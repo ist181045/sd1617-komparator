@@ -119,7 +119,7 @@ public class SupplierPortImpl implements SupplierPortType {
 		builder.append("Hello ").append(name);
 		builder.append(" from ").append(wsName);
 		
-		SecurityManager.getInstance().setDestination("A58_Mediator");
+		SecurityManager.getInstance().setReceiver("A58_Mediator");
 		
 		return builder.toString();
 	}

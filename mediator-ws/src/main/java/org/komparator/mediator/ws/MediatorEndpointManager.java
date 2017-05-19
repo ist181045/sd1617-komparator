@@ -1,9 +1,12 @@
 package org.komparator.mediator.ws;
 
-import javax.xml.ws.Endpoint;
-import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
-
 import java.io.IOException;
+
+import javax.xml.ws.Endpoint;
+
+import org.komparator.security.SecurityManager;
+
+import pt.ulisboa.tecnico.sdis.ws.uddi.UDDINaming;
 
 /**
  * End point manager
@@ -44,6 +47,11 @@ public class MediatorEndpointManager {
      * output option
      **/
     private boolean verbose = true;
+    
+    /**
+     * LifeProof class
+     **/
+    private LifeProof lifeProof = null;
 
     /**
      * constructor with provided UDDI location, WS name, and WS URL
@@ -53,6 +61,7 @@ public class MediatorEndpointManager {
         this.wsName = wsName;
         this.wsURL = wsURL;
 
+        SecurityManager.getInstance().setSender(wsName);
         portImpl = new MediatorPortImpl(this);
     }
 
@@ -76,19 +85,21 @@ public class MediatorEndpointManager {
         return wsName;
     }
 
+    
     /**
      * Obtain Port implementation
      */
     public MediatorPortType getPort() {
         return portImpl;
     }
+	
+	public LifeProof getLifeProof() {
+		return lifeProof;
+	}
 
-    /**
-     * Get UDDI Naming instance for contacting UDDI server
-     */
-    UDDINaming getUddiNaming() {
-        return uddiNaming;
-    }
+	public void setLifeProof(LifeProof lifeProof) {
+		this.lifeProof = lifeProof;
+	}
 
     public boolean isVerbose() {
         return verbose;
@@ -158,12 +169,17 @@ public class MediatorEndpointManager {
         try {
             // publish to UDDI
             if (uddiURL != null) {
-                if (verbose) {
-                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
-                }
-                uddiNaming = new UDDINaming(uddiURL);
-                uddiNaming.rebind(wsName, wsURL);
+            	if (lifeProof.isPrimary()){
+	                if (verbose) {
+	                    System.out.printf("Publishing '%s' to UDDI at %s%n", wsName, uddiURL);
+	                }
+	                uddiNaming = new UDDINaming(uddiURL);
+	                uddiNaming.rebind(wsName, wsURL);
+	                System.out.println("Started as primary mediator");
+	                return;
+            	}
             }
+        	System.out.println("Started as secondary mediator");
         } catch (Exception e) {
             uddiNaming = null;
             if (verbose) {
@@ -190,4 +206,7 @@ public class MediatorEndpointManager {
         }
     }
 
+	
+
+	
 }

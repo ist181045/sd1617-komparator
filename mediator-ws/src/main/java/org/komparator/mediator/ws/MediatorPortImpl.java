@@ -1,19 +1,24 @@
 package org.komparator.mediator.ws;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import javax.annotation.Resource;
 import javax.jws.HandlerChain;
 import javax.jws.WebService;
+import javax.xml.ws.WebServiceContext;
 
+import org.komparator.mediator.ws.cli.MediatorClient;
 import org.komparator.supplier.ws.BadProductId_Exception;
 import org.komparator.supplier.ws.BadQuantity_Exception;
 import org.komparator.supplier.ws.BadText_Exception;
@@ -39,6 +44,14 @@ import pt.ulisboa.tecnico.sdis.ws.uddi.UDDIRecord;
 @HandlerChain(file = "/mediator-ws_handler-chain.xml")
 public class MediatorPortImpl implements MediatorPortType {
 
+    @Resource
+    private WebServiceContext wsc;
+
+    private static final String MESSAGE_ID_PROPERTY =
+            "org.komparator.mediator.ws.message.id";
+
+    private Map<String, Object> messageIds = new ConcurrentHashMap<>();
+
     // ItemView comparator
     private static final Comparator<ItemView> ITEM_VIEW_COMPARATOR = (iv1, iv2) -> {
         String pid1 = iv1.getItemId().getProductId();
@@ -51,14 +64,15 @@ public class MediatorPortImpl implements MediatorPortType {
                 : iv1.getPrice() - iv2.getPrice();
     };
 
-    private static final String CREDIT_CARD_WS_URL = "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
+    private static final String CREDIT_CARD_WS_URL =
+            "http://ws.sd.rnl.tecnico.ulisboa.pt:8080/cc";
 
     // end point manager
     private MediatorEndpointManager endpointManager;
 
     // shopping carts
     private ConcurrentMap<String, CartView> carts = new ConcurrentHashMap<>();
-
+    
     // shopping history
     private SortedMap<LocalDateTime, ShoppingResultView> shoppingHistory
             = new TreeMap<>();
@@ -69,24 +83,31 @@ public class MediatorPortImpl implements MediatorPortType {
 
     @Override
     public void clear() {
-        List<SupplierClient> suppliers;
-        try {
-            suppliers = supplierLookup();
-        } catch (MediatorException me) {
-            System.err.println("Mediator lookup failed: "
-                    + me.getMessage());
-            return;
-        }
-
-        for (SupplierClient supplier : suppliers) {
-            supplier.clear();
-        }
+        LifeProof lifeProof = endpointManager.getLifeProof();
+    	if (lifeProof.isPrimary()) {
+	        List<SupplierClient> suppliers;
+	        try {
+	            suppliers = supplierLookup();
+	        } catch (MediatorException me) {
+	            System.err.println("Mediator lookup failed: "
+	                    + me.getMessage());
+	            return;
+	        }
+	
+	        for (SupplierClient supplier : suppliers) {
+	            supplier.clear();
+	        }
+    	}
 
         //Reset carts
         carts.clear();
 
         //Reset history
         shoppingHistory.clear();
+        
+        //Clear secondary mediator
+        if (lifeProof.secondaryExists())
+        	lifeProof.getMediatorClient().clear();
 
     }
 
@@ -109,7 +130,6 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
                 ProductView productview = null;
@@ -147,7 +167,6 @@ public class MediatorPortImpl implements MediatorPortType {
             throwInvalidText("Product description cannot be empty or whitespace!");
 
         List<SupplierClient> suppliers;
-
         try {
             suppliers = supplierLookup();
         } catch (MediatorException me) {
@@ -157,7 +176,6 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         TreeSet<ItemView> products = new TreeSet<>(ITEM_VIEW_COMPARATOR);
-
         synchronized (this) {
             for (SupplierClient supplier : suppliers) {
                 List<ProductView> productViews = null;
@@ -177,18 +195,22 @@ public class MediatorPortImpl implements MediatorPortType {
         }
 
         return new ArrayList<>(products);
-
     }
 
     @Override
     public ShoppingResultView buyCart(String cartId, String creditCardNr)
             throws EmptyCart_Exception, InvalidCartId_Exception,
             InvalidCreditCard_Exception {
+        String messageId =
+                (String)wsc.getMessageContext().get(MESSAGE_ID_PROPERTY);
+        if(messageIds.containsKey(messageId))
+            return (ShoppingResultView)messageIds.get(messageId);
 
         if (cartId == null || cartId.trim().length() == 0
-                || cartId.matches(".*[\r\n\t]+.*"))
+                || cartId.matches(".*[\r\n\t]+.*")) {
             throwInvalidCartId("Cart ID given is null, empty or contains "
                     + "whitespace characters!");
+        }
 
         if (creditCardNr == null || creditCardNr.trim().length() == 0
                 || creditCardNr.matches(".*[\r\n\t]+.*")) {
@@ -264,18 +286,36 @@ public class MediatorPortImpl implements MediatorPortType {
                     + "@" + datetime;
 
             srv.setId(srvId);
-
             shoppingHistory.put(datetime, srv);
+            messageIds.put(messageId, srv);
+
+            LifeProof lifeProof = endpointManager.getLifeProof();
+            if (lifeProof.secondaryExists()) {
+                MediatorClient client = lifeProof.getMediatorClient();
+                client.updateShopHistory(datetime.toString(), srv);
+            }
         }
 
         carts.remove(cartId);
+        
+        LifeProof lifeProof = endpointManager.getLifeProof();
+        if (lifeProof.secondaryExists()) {
+            MediatorClient client = lifeProof.getMediatorClient();
+            client.updateCart(cartId, null);
+        }
+        
         return srv;
     }
 
     @Override
-    public void addToCart(String cartId, ItemIdView itemId, int itemQty) throws InvalidCartId_Exception,
-            InvalidItemId_Exception, InvalidQuantity_Exception, NotEnoughItems_Exception {
-
+    public void addToCart(String cartId, ItemIdView itemId, int itemQty)
+            throws InvalidCartId_Exception, InvalidItemId_Exception,
+            InvalidQuantity_Exception, NotEnoughItems_Exception {
+    	String messageId = (String)wsc.getMessageContext().get(
+                MESSAGE_ID_PROPERTY);
+    	if(messageIds.containsKey(messageId))
+    		return;
+    	
         // check cartID
         if (cartId == null)
             throwInvalidCartId("CartId cannot be null!");
@@ -309,7 +349,8 @@ public class MediatorPortImpl implements MediatorPortType {
 
         ProductView pv;
         try {
-            SupplierClient supplier = new SupplierClient(endpointManager.getUddiURL(), supplierId);
+            SupplierClient supplier = new SupplierClient(
+                    endpointManager.getUddiURL(), supplierId);
             synchronized (this) {
                 pv = supplier.getProduct(productId);
             }
@@ -357,17 +398,24 @@ public class MediatorPortImpl implements MediatorPortType {
                 cv.getItems().add(civ);
 
                 carts.put(cartId, cv);
+
+                LifeProof lifeProof = endpointManager.getLifeProof();
+                if (lifeProof.secondaryExists()) {
+                    MediatorClient client = lifeProof.getMediatorClient();
+                    client.updateCart(cartId, cv.getItems());
+                }
             }
+            
+            messageIds.put(messageId, new Object());
         }
     }
 
+    @Override
     public String ping(String arg0) {
-        if (arg0 == null || arg0.trim().length() == 0 ||
-                arg0.trim().matches(".*[\\r\\n\\t]+.*")) {
+        if (arg0 == null || (arg0 = arg0.trim()).length() == 0 ||
+                arg0.matches(".*[\\r\\n\\t]+.*")) {
             return "Invalid ping argument!";
         }
-
-        arg0 = arg0.trim();
 
         List<SupplierClient> suppliers;
         try {
@@ -376,7 +424,7 @@ public class MediatorPortImpl implements MediatorPortType {
             return "Error occurred: " + me.getMessage();
         }
 
-        if (suppliers != null) {
+        if (suppliers != null && suppliers.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (SupplierClient supplier : suppliers) {
                 sb.append(String.format("Response from %s: ",
@@ -390,10 +438,53 @@ public class MediatorPortImpl implements MediatorPortType {
 
         return "No suppliers available!";
     }
+    
+    @Override
+    public void imAlive() {
+        LifeProof lifeProof = endpointManager.getLifeProof();
+
+        if (lifeProof.isPrimary()) {
+    		lifeProof.setSecondaryExists(true);
+    		updateAllCarts();
+    	} else {
+    		lifeProof.setLastImAlive(Instant.now());
+    	}
+    }
+    
 
     @Override
     public synchronized List<ShoppingResultView> shopHistory() {
         return new ArrayList<>(shoppingHistory.values());
+    }
+    
+    @Override
+    public void updateShopHistory(String index, ShoppingResultView item) {
+    	if(index == null || item == null) {
+    		return;
+    	}
+
+    	if(!endpointManager.getLifeProof().isPrimary()) {
+    		shoppingHistory.put(LocalDateTime.parse(index), item);
+    	}
+    }
+    
+    @Override
+    public void updateCart(String cartId, List<CartItemView> items) {
+    	 if (!endpointManager.getLifeProof().isPrimary()) {
+    		 if (items == null || items.isEmpty()) {
+    			 carts.remove(cartId);
+    			 return;
+    		 }
+				
+             CartView cv = new CartView();
+             cv.setCartId(cartId);
+
+             for (CartItemView civ : items) {
+                 cv.getItems().add(civ);
+             }
+
+             carts.put(cartId, cv);
+    	 }
     }
 
     // View helpers ----------------------------------------------------------
@@ -471,10 +562,8 @@ public class MediatorPortImpl implements MediatorPortType {
         String uddiURL = endpointManager.getUddiURL();
 
         try {
-
             UDDINaming uddiNaming = new UDDINaming(uddiURL);
             uddiRecords = uddiNaming.listRecords("A58_Supplier%");
-
         } catch (Exception e) {
             String msg = String.format("Failed supplier lookup on uddi at %s!",
                     uddiURL);
@@ -489,7 +578,8 @@ public class MediatorPortImpl implements MediatorPortType {
             List<SupplierClient> suppliers = new ArrayList<>();
             for (UDDIRecord element : uddiRecords) {
                 try {
-                    SupplierClient temp = new SupplierClient(element.getUrl(), element.getOrgName());
+                    SupplierClient temp = new SupplierClient(
+                            element.getUrl(), element.getOrgName());
                     temp.setWsName(element.getOrgName());
                     if (temp.ping("A58_Mediator") != null)
                         suppliers.add(temp);
@@ -502,5 +592,16 @@ public class MediatorPortImpl implements MediatorPortType {
 
             return suppliers;
         }
+    }
+    
+    private void updateAllCarts() {
+        LifeProof lifeProof = endpointManager.getLifeProof();
+
+        if (lifeProof.secondaryExists()) {
+    		for (CartView cv : carts.values()) {
+                MediatorClient client = lifeProof.getMediatorClient();
+                client.updateCart(cv.getCartId(), cv.getItems());
+    		}
+    	}
     }
 }
