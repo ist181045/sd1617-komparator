@@ -235,7 +235,7 @@ public class MediatorClient implements MediatorPortType {
     /**
      * Wrapper method for <pre>doOperation</pre>.
      *
-     * @see #doOperation(java.lang.Object...)
+     * @see #doOperation(String, Class[], Object...)
      */
     private <T> T doOperation(Object... args) throws Throwable {
         // Use current thread's stacktrace get the caller method's name, fragile
@@ -243,8 +243,18 @@ public class MediatorClient implements MediatorPortType {
         // reference: http://stackoverflow.com/a/421338/6506157
         String methodName = Thread.currentThread().getStackTrace()[2]
                 .getMethodName();
-        // Build array of types from args
+
+        // Build array of types from args, does account for primitive types
+        // reference: http://stackoverflow.com/a/180139
         Class<?>[] types = Arrays.stream(args).map(Object::getClass)
+                .map(c -> {
+                    try {
+                        return (Class)c.getField("TYPE").get(null);
+                    } catch (Exception e) {
+                        // ignored, just retrieve what was
+                        return c;
+                    }
+                })
                 .collect(Collectors.toList()).toArray(new Class<?>[]{});
         return doOperation(methodName, types, args);
     }
@@ -254,6 +264,8 @@ public class MediatorClient implements MediatorPortType {
      *
      * Method called by every operation, handles connection timeouts, retrying
      * after a certain period of time after failure.
+     * <strong>WARNING:</strong> This should not be invoked directly.. If so,
+     * proceed with caution.
      *
      * @param methodName The method to invoke's name
      * @param types The types of the arguments
@@ -406,7 +418,7 @@ public class MediatorClient implements MediatorPortType {
             InvalidQuantity_Exception, NotEnoughItems_Exception {
         generateMessageId();
         try {
-            doOperation(itemId, itemQty);
+            doOperation(cartId, itemId, itemQty);
         } catch (Throwable throwable) {
             if (throwable instanceof InvalidCartId_Exception)
                 throw (InvalidCartId_Exception)throwable;
