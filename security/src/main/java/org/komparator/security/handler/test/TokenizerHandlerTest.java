@@ -1,12 +1,8 @@
 package org.komparator.security.handler.test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import javax.xml.namespace.QName;
-import javax.xml.soap.Name;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPEnvelope;
 import javax.xml.soap.SOAPException;
@@ -18,22 +14,16 @@ import javax.xml.ws.handler.soap.SOAPHandler;
 import javax.xml.ws.handler.soap.SOAPMessageContext;
 
 import org.komparator.security.SecurityManager;
+import org.w3c.dom.NodeList;
 
 /**
  * This SOAPHandler adds date and time to message header
  */
 public class TokenizerHandlerTest implements SOAPHandler<SOAPMessageContext> {
-	
-	private static final String NS_PREFIX = "tok";
-	private static final String TOKEN_HEADER = "Token";
-	private static final String TOKEN_NS = "urn:token";
-	
-	
 	//
 	// Handler interface implementation
 	//
-	
-	
+
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
 	 * null, processes all.
@@ -41,9 +31,7 @@ public class TokenizerHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public Set<QName> getHeaders() {
 		return null;
-		
 	}
-	
 
 	/**
 	 * The handleMessage method is invoked for normal processing of inbound and
@@ -52,17 +40,54 @@ public class TokenizerHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		if (outbound) 
-			changeToken(smc);
+
+		Set<String> tokens = SecurityManager.getInstance().getTokens();
+		if (outbound && tokens.size() > 1)  {
+			QName service = (QName) smc.get(MessageContext.WSDL_SERVICE);
+
+			String localName = "SecurityToken";
+			String uri = service.getNamespaceURI();
+
+			System.err.print("[TOKEN ATTACK] Starting.. ");
+			try {
+				SOAPMessage msg = smc.getMessage();
+				SOAPPart sp = msg.getSOAPPart();
+				SOAPEnvelope se = sp.getEnvelope();
+				SOAPHeader sh = se.getHeader();
+
+				// check header
+				if (sh == null) {
+					System.err.printf("KO: Header not found, "
+							+ "exiting..%n%n");
+					return true;
+				}
+
+				// get first header element
+				NodeList nodes = sh.getElementsByTagNameNS(uri, localName);
+				if (nodes.getLength() == 0) {
+					System.err.printf("KO: Couldn't find token "
+							+ "in header, exiting..%n%n");
+					return true;
+				}
+
+				// get header element and inject value
+				SOAPElement element = (SOAPElement) nodes.item(0);
+				String token = tokens.stream().findFirst().get();
+				element.setTextContent(token);
+				msg.saveChanges();
+
+				System.err.printf("OK: Older token injected!%n%n");
+			} catch (SOAPException soape) {
+				System.err.printf("KO: Soap error: %s%n%n", soape.getMessage());
+			}
+		}
+
 		return true;
 	}
 
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		if (outbound) 
-			changeToken(smc);
 		return true;
 	}
 
@@ -73,61 +98,5 @@ public class TokenizerHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public void close(MessageContext messageContext) {
 		// nothing to clean up
-	}
-
-	
-	private void changeToken(SOAPMessageContext smc) {
-			
-		try {
-			if(SecurityManager.getInstance().getTokens().size() > 0) {
-				
-				SOAPMessage msg = smc.getMessage();
-				SOAPPart sp = msg.getSOAPPart();
-				SOAPEnvelope se = sp.getEnvelope();
-				SOAPHeader sh = se.getHeader();
-
-				if(msg.getSOAPBody().getFault() != null) {
-					return;
-				}
-				
-				// check header
-				if (sh == null) {
-					{
-						String errorMessage = "Can't perform test: Header not found";
-						System.out.println(errorMessage);
-						return;
-					}
-				}
-				
-				// get first header element
-				Name name = se.createName(TOKEN_HEADER, NS_PREFIX, TOKEN_NS);
-				
-				@SuppressWarnings("rawtypes")
-				Iterator it = sh.getChildElements(name);
-				// check header element
-				if (!it.hasNext()) {
-					{
-						String errorMessage = "Can't perform test: Header " + TOKEN_HEADER + " not found";
-						System.out.println(errorMessage);
-						return;
-					}
-				}
-				SOAPElement element = (SOAPElement) it.next();
-			
-				// get header element value
-				String token = (new ArrayList<String>(SecurityManager.getInstance().getTokens())).get(0);
-				
-				element.setTextContent(token);
-			}
-			
-			
-			
-		} catch (SOAPException ie) {
-			{
-				String errorMessage = "Can't perform test: " + ie.getMessage();
-				System.out.println(errorMessage);
-				return;
-			}
-		}	
 	}
 }

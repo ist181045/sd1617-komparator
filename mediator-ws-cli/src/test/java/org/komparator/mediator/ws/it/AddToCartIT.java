@@ -77,12 +77,13 @@ public class AddToCartIT extends BaseIT {
 					sc2.createProduct(product);
 				}
 			} catch (BadProductId_Exception | BadProduct_Exception e) {
-				//All tests will fail cause Suppliers are empty
-				e.printStackTrace();
+				System.err.println("Empty suppliers: " + e.getMessage());
+				fail();
 			}
 		} catch (SupplierClientException e) {
-			//Couldn't create SupplierClients. All tests will fail
-			e.printStackTrace();
+				System.err.println("Couldn't create supplier clients: "
+						+ e.getMessage());
+				fail();
 		}
 	}
 

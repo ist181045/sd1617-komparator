@@ -141,7 +141,7 @@ public class SupplierClient implements SupplierPortType {
 
 	@Override
 	public String ping(String name) {
-		SecurityManager.getInstance().setDestination(getWsName());
+		SecurityManager.getInstance().setReceiver(getWsName());
 		return port.ping(name);
 	}
 

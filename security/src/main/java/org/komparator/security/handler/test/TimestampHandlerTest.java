@@ -14,11 +14,9 @@ import org.komparator.security.SecurityManager;
  * This SOAPHandler adds date and time to message header
  */
 public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
-	
 	//
 	// Handler interface implementation
 	//
-	
 	
 	/**
 	 * Gets the header blocks that can be processed by this Handler instance. If
@@ -27,9 +25,7 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public Set<QName> getHeaders() {
 		return null;
-		
 	}
-	
 
 	/**
 	 * The handleMessage method is invoked for normal processing of inbound and
@@ -38,17 +34,24 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public boolean handleMessage(SOAPMessageContext smc) {
 		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		if (outbound) 
-			delayMessage(smc);
+		if (outbound) {
+			try {
+				int timeout = SecurityManager.getMsgTimeout();
+				System.out.printf("%n[TIMESTAMP ATTACK] Sleeping %d seconds..",
+						timeout);
+				TimeUnit.SECONDS.sleep(timeout);
+				System.out.printf("OK%n%n");
+			} catch (InterruptedException ie) {
+				System.err.printf("KO%n%n");
+			}
+		}
+
 		return true;
 	}
 
 	/** The handleFault method is invoked for fault message processing. */
 	@Override
 	public boolean handleFault(SOAPMessageContext smc) {
-		Boolean outbound = (Boolean) smc.get(MessageContext.MESSAGE_OUTBOUND_PROPERTY);
-		if (outbound) 
-			delayMessage(smc);
 		return true;
 	}
 
@@ -59,26 +62,5 @@ public class TimestampHandlerTest implements SOAPHandler<SOAPMessageContext> {
 	@Override
 	public void close(MessageContext messageContext) {
 		// nothing to clean up
-	}
-
-	
-	private void delayMessage(SOAPMessageContext smc) {
-			
-		try {
-			
-			System.out.println("Sleeping :" + (SecurityManager.getMaxTimeout() + 1) + " seconds");
-			
-			TimeUnit.SECONDS.sleep(SecurityManager.getMaxTimeout() + 1);
-			
-			System.out.println("Sleep time is over");
-			
-			
-		} catch (InterruptedException ie) {
-			{
-				String errorMessage = "Couldn't sleep: " + ie.getMessage();
-				System.out.println(errorMessage);
-				return;
-			}
-		}	
 	}
 }
