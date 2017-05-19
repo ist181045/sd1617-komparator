@@ -9,6 +9,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.komparator.mediator.ws.CartItemView;
 import org.komparator.mediator.ws.CartView;
 import org.komparator.mediator.ws.EmptyCart_Exception;
 import org.komparator.mediator.ws.InvalidCartId_Exception;
@@ -16,6 +17,7 @@ import org.komparator.mediator.ws.InvalidCreditCard_Exception;
 import org.komparator.mediator.ws.InvalidItemId_Exception;
 import org.komparator.mediator.ws.InvalidQuantity_Exception;
 import org.komparator.mediator.ws.ItemIdView;
+import org.komparator.mediator.ws.ItemView;
 import org.komparator.mediator.ws.NotEnoughItems_Exception;
 import org.komparator.mediator.ws.ShoppingResultView;
 import org.komparator.security.SecurityManager;
@@ -158,16 +160,53 @@ public class P4DemoIT extends BaseIT {
 		List<CartView> cartList = mediatorClient.listCarts();
 		assertNotNull(cartList);
 		assertEquals(1, cartList.size());
-		
+
+		System.out.println();
+		cartList.forEach(cv -> {
+			System.out.println("--- Cart " + cv.getCartId() + " ---");
+			cv.getItems().forEach(civ -> {
+				ItemView iv = civ.getItem();
+				ItemIdView iiv = iv.getItemId();
+				System.out.println("Product ID: " + iiv.getProductId());
+				System.out.println("- Price: " + iv.getPrice());
+				System.out.println("- Quantity: " + civ.getQuantity());
+				System.out.println("- Supplier: " + iiv.getSupplierId());
+				System.out.println("- Desc: " + iv.getDesc());
+			});
+		});
+		System.out.println();
+
 		assertEquals(CART_ID, cartList.get(0).getCartId());
 		
-		List<ShoppingResultView> srv = mediatorClient.shopHistory();
+		List<ShoppingResultView> history = mediatorClient.shopHistory();
 		
-		assertNotNull(srv);
-		assertEquals(1, srv.size());
+		assertNotNull(history);
+		assertEquals(1, history.size());
+
+		System.out.println();
+		history.forEach(srv -> {
+			System.out.println("--- Shopping Result " + srv.getId() + " ---");
+			System.out.println("- Dropped Items:");
+			srv.getDroppedItems().forEach(di -> {
+				System.out.println("  * ID: "
+						+ di.getItem().getItemId().getProductId());
+				System.out.println("  * Quantity: " + di.getQuantity());
+			});
+
+			System.out.println("- Purchased Items:");
+			srv.getPurchasedItems().forEach(pi -> {
+				System.out.println("  * ID: "
+						+ pi.getItem().getItemId().getProductId());
+				System.out.println("  * Quantity: " + pi.getQuantity());
+			});
+
+			System.out.println("- Total Price: " + srv.getTotalPrice());
+			System.out.println("- Result: " + srv.getResult());
+		});
+		System.out.println();
 		
-		assertEquals("I1420", srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getProductId());
-		assertEquals(sc1.getWsName(), srv.get(0).getPurchasedItems().get(0).getItem().getItemId().getSupplierId());
+		assertEquals("I1420", history.get(0).getPurchasedItems().get(0).getItem().getItemId().getProductId());
+		assertEquals(sc1.getWsName(), history.get(0).getPurchasedItems().get(0).getItem().getItemId().getSupplierId());
 		
 	}
 	
